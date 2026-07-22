@@ -1,0 +1,1378 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Painel SAC | Expresso Guanabara</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<style>
+:root{
+  --gb-red:#0D5EBD;
+  --gb-red-600:#0A4A96;
+  --gb-red-050:#E9F2FC;
+  --gb-gold:#4C9BE8;
+  --gb-gold-600:#2E7CCB;
+  --ink:#15181E;
+  --ink-2:#3B424C;
+  --muted:#6C7480;
+  --line:#E5E8ED;
+  --bg:#F3F4F7;
+  --card:#FFFFFF;
+  --card-2:#FAFBFC;
+  --ok:#128A46;
+  --ok-bg:#E4F5EB;
+  --warn:#C98A00;
+  --warn-bg:#FCF2DC;
+  --bad:#C8102E;
+  --bad-bg:#FBE6E9;
+  --shadow:0 1px 2px rgba(16,20,26,.05),0 4px 16px rgba(16,20,26,.06);
+  --shadow-lg:0 12px 40px rgba(16,20,26,.18);
+  --radius:14px;
+  --radius-sm:9px;
+}
+[data-theme="dark"]{
+  --ink:#EDEFF3;
+  --ink-2:#C2C8D0;
+  --muted:#8A93A0;
+  --line:#2A2F38;
+  --bg:#111318;
+  --card:#191C22;
+  --card-2:#1F232B;
+  --gb-red-050:#12243B;
+  --ok-bg:#12281C;
+  --warn-bg:#2C2412;
+  --bad-bg:#2C1418;
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 6px 18px rgba(0,0,0,.35);
+  --shadow-lg:0 16px 48px rgba(0,0,0,.6);
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  font-family:'Inter',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+  background:var(--bg);
+  color:var(--ink);
+  font-size:14px;
+  line-height:1.45;
+  -webkit-font-smoothing:antialiased;
+  transition:background .25s,color .25s;
+}
+h1,h2,h3,.display{font-family:'Barlow','Inter',sans-serif;letter-spacing:-.01em}
+.num{font-variant-numeric:tabular-nums}
+button{font-family:inherit;cursor:pointer}
+input,select{font-family:inherit}
+::-webkit-scrollbar{height:10px;width:10px}
+::-webkit-scrollbar-thumb{background:var(--line);border-radius:20px}
+::-webkit-scrollbar-thumb:hover{background:var(--muted)}
+
+/* ---------- Top bar ---------- */
+.topbar{
+  position:sticky;top:0;z-index:40;
+  background:var(--gb-red);
+  color:#fff;
+  box-shadow:0 2px 0 var(--gb-gold), var(--shadow);
+}
+.topbar-inner{
+  max-width:1440px;margin:0 auto;padding:0 22px;
+  height:60px;display:flex;align-items:center;gap:16px;
+}
+.brand{display:flex;align-items:center;gap:12px;min-width:0}
+.brand-arc{
+  width:34px;height:34px;flex:0 0 auto;position:relative;
+  border-radius:50%;
+  background:
+    radial-gradient(circle at 50% 50%, transparent 0 9px, #fff 9px 13px, transparent 13px),
+    var(--gb-gold);
+  box-shadow:inset 0 0 0 2px rgba(0,0,0,.06);
+}
+.brand-txt{display:flex;flex-direction:column;line-height:1.05;min-width:0}
+.brand-txt b{font-family:'Barlow';font-weight:800;font-size:17px;letter-spacing:.02em;text-transform:uppercase}
+.brand-txt span{font-size:11px;opacity:.85;font-weight:500;letter-spacing:.04em}
+.topbar .spacer{flex:1}
+.tbtn{
+  display:inline-flex;align-items:center;gap:7px;
+  height:38px;padding:0 14px;border:none;border-radius:var(--radius-sm);
+  font-weight:600;font-size:13px;color:#fff;
+  background:rgba(255,255,255,.14);
+  transition:background .15s,transform .05s;
+  white-space:nowrap;
+}
+.tbtn:hover{background:rgba(255,255,255,.24)}
+.tbtn:active{transform:translateY(1px)}
+.tbtn.solid{background:#fff;color:var(--gb-red)}
+.tbtn.solid:hover{background:var(--gb-gold);color:var(--ink)}
+.tbtn svg{width:16px;height:16px}
+.icon-btn{
+  width:38px;height:38px;border:none;border-radius:50%;
+  background:rgba(255,255,255,.14);color:#fff;display:grid;place-items:center;
+}
+.icon-btn:hover{background:rgba(255,255,255,.26)}
+.icon-btn svg{width:18px;height:18px}
+
+/* export menu */
+.menu-wrap{position:relative}
+.menu{
+  position:absolute;right:0;top:46px;z-index:60;
+  background:var(--card);color:var(--ink);
+  border:1px solid var(--line);border-radius:12px;
+  box-shadow:var(--shadow-lg);padding:6px;min-width:190px;display:none;
+}
+.menu.open{display:block}
+.menu button{
+  display:flex;align-items:center;gap:10px;width:100%;
+  background:none;border:none;color:var(--ink);
+  padding:9px 11px;border-radius:8px;font-size:13px;font-weight:500;text-align:left;
+}
+.menu button:hover{background:var(--card-2)}
+.menu button svg{width:15px;height:15px;color:var(--muted)}
+.menu .sep{height:1px;background:var(--line);margin:5px 4px}
+
+/* ---------- Layout ---------- */
+.wrap{max-width:1440px;margin:0 auto;padding:20px 22px 60px}
+.section{margin-bottom:22px}
+.section-head{display:flex;align-items:center;gap:10px;margin:0 0 12px}
+.section-head h2{font-size:15px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin:0;color:var(--ink-2)}
+.section-head .tick{width:4px;height:16px;border-radius:3px;background:var(--gb-red)}
+.section-head .grow{flex:1}
+.hint{color:var(--muted);font-size:12.5px}
+
+/* dropzone */
+.dropzone{
+  border:2px dashed var(--line);border-radius:var(--radius);
+  background:var(--card);padding:40px 24px;text-align:center;
+  transition:border-color .15s,background .15s;
+}
+.dropzone.drag{border-color:var(--gb-red);background:var(--gb-red-050)}
+.dropzone .dz-arc{
+  width:60px;height:60px;margin:0 auto 14px;border-radius:50%;
+  background:radial-gradient(circle at 50% 50%,transparent 0 17px,var(--gb-gold) 17px 23px,transparent 23px),var(--gb-red-050);
+  display:grid;place-items:center;
+}
+.dropzone .dz-arc svg{width:26px;height:26px;color:var(--gb-red)}
+.dropzone h3{margin:0 0 6px;font-size:18px}
+.dropzone p{margin:0 0 16px;color:var(--muted)}
+
+/* config bar */
+.config{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;
+  background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+  padding:14px 16px;box-shadow:var(--shadow);
+}
+.cfg-field{display:flex;flex-direction:column;gap:5px}
+.cfg-field label{font-size:11.5px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.03em}
+.cfg-field input{
+  height:36px;padding:0 10px;border:1px solid var(--line);border-radius:8px;
+  background:var(--card-2);color:var(--ink);font-size:14px;font-weight:600;
+}
+.cfg-field input:focus{outline:none;border-color:var(--gb-red);box-shadow:0 0 0 3px var(--gb-red-050)}
+
+/* KPI cards */
+.kpis{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px}
+.kpi{
+  background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+  padding:14px 15px;box-shadow:var(--shadow);position:relative;overflow:hidden;
+}
+.kpi::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--gb-red)}
+.kpi.gold::before{background:var(--gb-gold)}
+.kpi.ok::before{background:var(--ok)}
+.kpi.bad::before{background:var(--bad)}
+.kpi .k-label{font-size:11.5px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.03em;margin-bottom:6px}
+.kpi .k-value{font-family:'Barlow';font-weight:800;font-size:26px;line-height:1;color:var(--ink)}
+.kpi .k-value small{font-size:14px;font-weight:600;color:var(--muted)}
+.kpi .k-sub{font-size:12px;color:var(--muted);margin-top:5px}
+.kpi .k-sub strong{color:var(--ink)}
+
+/* alerts */
+.alerts{display:flex;flex-direction:column;gap:8px}
+.alert{
+  display:flex;align-items:flex-start;gap:11px;
+  background:var(--card);border:1px solid var(--line);border-left-width:4px;
+  border-radius:10px;padding:11px 14px;box-shadow:var(--shadow);
+}
+.alert.r{border-left-color:var(--bad)}
+.alert.y{border-left-color:var(--warn)}
+.alert.g{border-left-color:var(--ok)}
+.alert .dot{width:9px;height:9px;border-radius:50%;margin-top:5px;flex:0 0 auto}
+.alert.r .dot{background:var(--bad)}
+.alert.y .dot{background:var(--warn)}
+.alert.g .dot{background:var(--ok)}
+.alert .a-txt{font-size:13px}
+.alert .a-txt b{font-weight:700}
+
+/* toolbar (table controls) */
+.toolbar{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-bottom:12px}
+.search{
+  position:relative;flex:1;min-width:200px;max-width:340px;
+}
+.search svg{position:absolute;left:11px;top:50%;transform:translateY(-50%);width:16px;height:16px;color:var(--muted)}
+.search input{
+  width:100%;height:38px;padding:0 12px 0 34px;border:1px solid var(--line);
+  border-radius:9px;background:var(--card);color:var(--ink);font-size:13.5px;
+}
+.search input:focus{outline:none;border-color:var(--gb-red);box-shadow:0 0 0 3px var(--gb-red-050)}
+.filter-select{
+  height:38px;padding:0 30px 0 12px;border:1px solid var(--line);border-radius:9px;
+  background:var(--card);color:var(--ink);font-size:13px;font-weight:500;
+  appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236C7480' stroke-width='3'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 10px center;
+}
+.ghost-btn{
+  height:38px;padding:0 13px;border:1px solid var(--line);border-radius:9px;
+  background:var(--card);color:var(--ink-2);font-size:13px;font-weight:600;
+  display:inline-flex;align-items:center;gap:7px;
+}
+.ghost-btn:hover{border-color:var(--gb-red);color:var(--gb-red)}
+.ghost-btn.flt-on{border-color:var(--gb-red);color:var(--gb-red);background:var(--gb-red-050)}
+.ghost-btn svg{width:15px;height:15px}
+
+/* column picker popover */
+.colpicker{
+  position:relative;
+}
+.colpop{
+  position:absolute;right:0;top:44px;z-index:50;width:240px;
+  background:var(--card);border:1px solid var(--line);border-radius:12px;
+  box-shadow:var(--shadow-lg);padding:10px;display:none;max-height:340px;overflow:auto;
+}
+.colpop.open{display:block}
+.colpop .cp-row{display:flex;align-items:center;gap:9px;padding:6px 7px;border-radius:7px}
+.colpop .cp-row:hover{background:var(--card-2)}
+.colpop label{font-size:13px;cursor:pointer;flex:1}
+.colpop input{accent-color:var(--gb-red);width:16px;height:16px}
+
+/* table */
+.tablecard{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden}
+.tablescroll{overflow:auto;max-height:620px}
+.tablescroll.expanded{max-height:none}
+table.data{border-collapse:separate;border-spacing:0;width:100%;font-size:13px}
+table.data thead th{
+  position:sticky;top:0;z-index:5;background:var(--card-2);
+  text-align:left;padding:11px 13px;font-size:11.5px;font-weight:700;
+  text-transform:uppercase;letter-spacing:.03em;color:var(--muted);
+  border-bottom:1px solid var(--line);white-space:nowrap;cursor:pointer;user-select:none;
+}
+table.data thead th.name-col{position:sticky;left:0;z-index:6}
+table.data thead th:hover{color:var(--gb-red)}
+table.data thead th .arrow{opacity:.35;margin-left:4px;font-size:10px}
+table.data thead th.sorted .arrow{opacity:1;color:var(--gb-red)}
+table.data tbody td{padding:10px 13px;border-bottom:1px solid var(--line);white-space:nowrap}
+table.data tbody tr:hover td{background:var(--card-2)}
+table.data td.name-col{position:sticky;left:0;background:var(--card);font-weight:600;cursor:pointer}
+table.data tbody tr:hover td.name-col{background:var(--card-2)}
+table.data td.name-col:hover{color:var(--gb-red)}
+.rank-badge{display:inline-grid;place-items:center;width:22px;height:22px;border-radius:6px;background:var(--card-2);font-size:11px;font-weight:700;color:var(--muted);margin-right:9px}
+.pill{display:inline-flex;align-items:center;gap:6px;padding:3px 9px;border-radius:20px;font-size:12px;font-weight:700}
+.pill .pd{width:7px;height:7px;border-radius:50%}
+.pill.ok{background:var(--ok-bg);color:var(--ok)} .pill.ok .pd{background:var(--ok)}
+.pill.warn{background:var(--warn-bg);color:var(--warn)} .pill.warn .pd{background:var(--warn)}
+.pill.bad{background:var(--bad-bg);color:var(--bad)} .pill.bad .pd{background:var(--bad)}
+.cell-num{text-align:right}
+.trend{font-size:11px;font-weight:700;margin-left:6px}
+.trend.up{color:var(--bad)} .trend.down{color:var(--ok)} .trend.flat{color:var(--muted)}
+
+/* pagination */
+.pager{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px 14px;border-top:1px solid var(--line);flex-wrap:wrap}
+.pager .pinfo{font-size:12.5px;color:var(--muted)}
+.pager .pbtns{display:flex;gap:6px;align-items:center}
+.pager button{width:34px;height:34px;border:1px solid var(--line);background:var(--card);border-radius:8px;color:var(--ink-2);font-weight:600}
+.pager button:hover:not(:disabled){border-color:var(--gb-red);color:var(--gb-red)}
+.pager button:disabled{opacity:.4;cursor:default}
+
+/* tabs */
+.tabs{display:flex;gap:4px;background:var(--card);border:1px solid var(--line);border-radius:11px;padding:4px;box-shadow:var(--shadow);width:fit-content;margin-bottom:16px;flex-wrap:wrap}
+.tab{padding:8px 15px;border:none;background:none;border-radius:8px;font-size:13px;font-weight:600;color:var(--muted)}
+.tab.active{background:var(--gb-red);color:#fff}
+.tab:hover:not(.active){color:var(--gb-red)}
+.panel{display:none}
+.panel.active{display:block}
+
+/* charts grid */
+.chart-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:14px}
+.chartcard{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:15px 16px 8px;box-shadow:var(--shadow)}
+.chartcard h3{margin:0 0 12px;font-size:13.5px;font-weight:700}
+.chartcard .cc-wrap{position:relative;height:250px}
+
+/* rankings */
+.rank-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px}
+.rankcard{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden}
+.rankcard h3{margin:0;padding:13px 16px;font-size:13px;font-weight:700;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:8px}
+.rankcard h3 .tick{width:3px;height:14px;border-radius:2px;background:var(--gb-red)}
+.rankcard h3.gold .tick{background:var(--gb-gold)}
+.rank-list{list-style:none;margin:0;padding:6px}
+.rank-list li{display:flex;align-items:center;gap:11px;padding:8px 10px;border-radius:8px}
+.rank-list li:hover{background:var(--card-2);cursor:pointer}
+.rank-list .rn{width:22px;height:22px;border-radius:6px;background:var(--card-2);display:grid;place-items:center;font-size:11px;font-weight:700;color:var(--muted);flex:0 0 auto}
+.rank-list li:nth-child(1) .rn{background:var(--gb-gold);color:#fff}
+.rank-list .rname{flex:1;font-weight:600;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rank-list .rval{font-weight:700;font-size:13px;font-variant-numeric:tabular-nums}
+
+/* modal */
+.modal-back{position:fixed;inset:0;background:rgba(16,20,26,.5);z-index:80;display:none;align-items:flex-start;justify-content:center;padding:30px 16px;overflow:auto;backdrop-filter:blur(2px)}
+.modal-back.open{display:flex}
+.modal{background:var(--card);border-radius:18px;box-shadow:var(--shadow-lg);width:100%;max-width:920px;overflow:hidden}
+.modal-head{background:var(--gb-red);color:#fff;padding:20px 24px;display:flex;align-items:center;gap:16px}
+.modal-head .avatar{width:56px;height:56px;border-radius:50%;background:rgba(255,255,255,.18);display:grid;place-items:center;font-family:'Barlow';font-weight:800;font-size:22px;flex:0 0 auto}
+.modal-head .mh-txt h2{margin:0;font-size:22px}
+.modal-head .mh-txt span{font-size:13px;opacity:.9}
+.modal-head .mclose{margin-left:auto;width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,.16);border:none;color:#fff;display:grid;place-items:center}
+.modal-head .mclose:hover{background:rgba(255,255,255,.3)}
+.modal-body{padding:22px 24px}
+.mkpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:11px;margin-bottom:20px}
+.mkpi{background:var(--card-2);border:1px solid var(--line);border-radius:11px;padding:12px 13px}
+.mkpi .l{font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.03em}
+.mkpi .v{font-family:'Barlow';font-weight:800;font-size:22px;margin-top:3px}
+.mchart{height:230px;position:relative;margin-bottom:18px}
+.compare-line{display:grid;grid-template-columns:1fr auto auto auto;gap:8px;align-items:center;padding:9px 12px;border-bottom:1px solid var(--line);font-size:13px}
+.compare-line.head{font-weight:700;color:var(--muted);font-size:11.5px;text-transform:uppercase;letter-spacing:.03em}
+
+/* comparar operadores */
+.cmp-head{display:flex;align-items:center;gap:16px;margin-bottom:20px;flex-wrap:wrap}
+.cmp-op{display:flex;align-items:center;gap:11px;flex:1;min-width:170px}
+.cmp-op.right{justify-content:flex-end;text-align:right}
+.cmp-avatar{width:42px;height:42px;border-radius:50%;background:var(--card-2);border:1px solid var(--line);display:grid;place-items:center;font-family:'Barlow';font-weight:800;font-size:15px;color:var(--gb-red);flex:0 0 auto}
+.cmp-op-name{font-weight:700;font-size:15px}
+.cmp-vs-badge{font-family:'Barlow';font-weight:800;font-size:12px;color:var(--muted);flex:0 0 auto;background:var(--card-2);border:1px solid var(--line);border-radius:999px;padding:5px 11px}
+.cmp-metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px;margin-bottom:16px}
+.cmp-card{background:var(--card-2);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+.cmp-card .cmp-label{font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.03em;margin-bottom:13px;text-align:center}
+.cmp-card .cmp-row{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:10px}
+.cmp-val{font-family:'Barlow';font-weight:800;font-size:22px;text-align:center;font-variant-numeric:tabular-nums;color:var(--muted)}
+.cmp-val.win{color:var(--ok)}
+.cmp-div{color:var(--muted);font-size:10.5px;font-weight:700;text-transform:uppercase}
+
+/* segmented control */
+.seg{display:inline-flex;background:var(--card-2);border:1px solid var(--line);border-radius:9px;padding:3px;gap:2px}
+.seg-btn{border:none;background:none;color:var(--muted);font-weight:600;font-size:12.5px;padding:6px 14px;border-radius:7px;cursor:pointer;font-family:inherit}
+.seg-btn.active{background:var(--gb-red);color:#fff}
+
+/* comparar períodos */
+.period-head{display:flex;align-items:center;gap:14px;margin-bottom:18px;flex-wrap:wrap}
+.period-chip{display:flex;flex-direction:column;gap:2px;background:var(--card-2);border:1px solid var(--line);border-radius:11px;padding:10px 15px;min-width:150px}
+.period-chip .pc-l{font-size:10.5px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.03em}
+.period-chip .pc-v{font-weight:700;font-size:14px}
+.period-chip.arrow{background:none;border:none;min-width:auto;align-items:center;justify-content:center;color:var(--muted);font-family:'Barlow';font-weight:800}
+.period-metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px}
+.pm-card{background:var(--card-2);border:1px solid var(--line);border-radius:12px;padding:15px 17px}
+.pm-card .pm-label{font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.03em;margin-bottom:12px}
+.pm-vals{display:flex;align-items:baseline;gap:10px}
+.pm-cur{font-family:'Barlow';font-weight:800;font-size:26px;font-variant-numeric:tabular-nums}
+.pm-prev{font-size:12.5px;color:var(--muted)}
+.pm-delta{margin-top:9px;display:inline-flex;align-items:center;gap:5px;font-size:12.5px;font-weight:700;padding:3px 9px;border-radius:999px}
+.pm-delta.up{background:var(--ok-bg);color:var(--ok)}
+.pm-delta.down{background:var(--bad-bg,rgba(200,16,46,.1));color:var(--bad)}
+.pm-delta.flat{background:var(--card);color:var(--muted)}
+.obs-area{width:100%;min-height:80px;border:1px solid var(--line);border-radius:10px;background:var(--card-2);color:var(--ink);padding:11px;font-family:inherit;font-size:13.5px;resize:vertical;margin-top:6px}
+.obs-area:focus{outline:none;border-color:var(--gb-red);box-shadow:0 0 0 3px var(--gb-red-050)}
+
+/* empty */
+.empty{text-align:center;padding:50px 20px;color:var(--muted)}
+.empty svg{width:40px;height:40px;opacity:.4;margin-bottom:10px}
+
+/* mapping modal fields */
+.map-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px 18px}
+.map-grid label{font-size:12px;font-weight:600;color:var(--muted);display:block;margin-bottom:5px}
+.map-grid select{width:100%;height:36px;border:1px solid var(--line);border-radius:8px;background:var(--card-2);color:var(--ink);padding:0 10px}
+.linkbtn{background:none;border:none;color:var(--gb-red);font-weight:600;font-size:13px;text-decoration:underline;padding:0}
+
+.hidden{display:none !important}
+.toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--ink);color:#fff;padding:11px 20px;border-radius:10px;font-size:13.5px;font-weight:600;box-shadow:var(--shadow-lg);opacity:0;transition:.25s;z-index:200;pointer-events:none}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+.foot{text-align:center;color:var(--muted);font-size:12px;margin-top:30px}
+.foot b{color:var(--gb-red)}
+
+@media (max-width:640px){
+  .topbar-inner{padding:0 14px;gap:8px}
+  .brand-txt span{display:none}
+  .wrap{padding:16px 14px 50px}
+  .tbtn span{display:none}
+  .kpi .k-value{font-size:22px}
+}
+@media print{
+  .topbar,.toolbar,.tabs,.config,.dropzone,.menu,.pager,.icon-btn{display:none !important}
+  body{background:#fff}
+  .panel{display:block !important}
+}
+</style>
+</head>
+<body>
+
+<!-- ===== TOP BAR ===== -->
+<header class="topbar">
+  <div class="topbar-inner">
+    <div class="brand">
+      <div class="brand-arc"></div>
+      <div class="brand-txt">
+        <b>Guanabara</b>
+        <span>Painel de Atendimento SAC</span>
+      </div>
+    </div>
+    <div class="spacer"></div>
+    <div class="menu-wrap">
+      <button class="tbtn solid" id="btnImport">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg>
+        <span>Importar CSV</span>
+      </button>
+      <div class="menu" id="importMenu">
+        <button data-imp="sintetico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>Relatório Sintético Detalhado</button>
+        <button data-imp="analitico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M7 14l4-4 4 4 4-6"/></svg>Relatório Analítico</button>
+      </div>
+    </div>
+    <div class="menu-wrap">
+      <button class="tbtn" id="btnExport">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 3v12"/><path d="M7 8l5-5 5 5"/><path d="M5 21h14"/></svg>
+        <span>Exportar</span>
+      </button>
+      <div class="menu" id="exportMenu">
+        <button data-exp="xlsx"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M8 8l8 8M16 8l-8 8"/></svg>Excel (.xlsx)</button>
+        <button data-exp="csv"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>CSV</button>
+        <button data-exp="pdf"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>PDF (imprimir)</button>
+        <button data-exp="img"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="M21 15l-5-5L5 21"/></svg>Imagem do painel</button>
+      </div>
+    </div>
+    <button class="icon-btn" id="btnTheme" title="Tema claro/escuro">
+      <svg id="themeIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+    </button>
+    <button class="icon-btn" id="btnClear" title="Limpar todos os dados">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+    </button>
+  </div>
+</header>
+
+<input type="file" id="fileInput" accept=".csv,.txt" multiple class="hidden">
+
+<div class="wrap">
+
+  <!-- ===== IMPORT / DROPZONE ===== -->
+  <section class="section" id="importSection">
+    <div class="dropzone" id="dropzone">
+      <div class="dz-arc">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg>
+      </div>
+      <h3>Arraste os arquivos CSV aqui</h3>
+      <p>Solte o relatório do mês e do dia anterior, ou escolha o tipo abaixo para selecionar os arquivos. Vários arquivos são mesclados automaticamente.</p>
+      <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+        <button class="tbtn solid" style="background:var(--gb-red);color:#fff;margin:0" id="btnPickSint">Importar Relatório Sintético Detalhado</button>
+        <button class="tbtn solid" style="background:var(--gb-gold);color:#fff;margin:0" id="btnPickAna">Importar Relatório Analítico</button>
+      </div>
+      <div style="margin-top:14px"><button class="linkbtn" id="btnDemo">Carregar dados de exemplo</button></div>
+    </div>
+    <div id="fileChips" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:12px"></div>
+  </section>
+
+  <!-- ===== CONFIG (metas) ===== -->
+  <section class="section hidden" id="configSection">
+    <div class="section-head"><span class="tick"></span><h2>Metas</h2><span class="grow"></span><span class="hint" id="periodLabel"></span></div>
+    <div class="config">
+      <div class="cfg-field"><label>Meta de TMA (mm:ss)</label><input id="metaTma" value="03:30" placeholder="03:30"></div>
+      <div class="cfg-field"><label>Meta chamadas atendidas <span style="font-weight:500;color:var(--muted)">(média automática, editável)</span></label><input id="metaAtend" type="number" value="120"><button type="button" id="metaAtendHint" class="linkbtn" style="display:none;margin-top:4px">usar média automática</button></div>
+      <div class="cfg-field"><label>Meta nível de serviço (%)</label><input id="metaNs" type="number" value="90"></div>
+      <div class="cfg-field"><label>Meta abandono máx. (%)</label><input id="metaAband" type="number" value="5"></div>
+      <div class="cfg-field"><label>Snapshot / período</label>
+        <select id="snapSelect" class="filter-select" style="width:100%;height:36px"></select>
+      </div>
+      <div class="cfg-field hidden" id="anaFilters" style="grid-column:1/-1">
+        <label>Filtros do relatório analítico</label>
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+          <div class="hidden" id="anaMonthWrap" style="min-width:170px;flex:1"><select id="anaMonthFilter" class="filter-select" style="width:100%;height:36px"></select></div>
+          <div style="min-width:170px;flex:1"><select id="anaDayFilter" class="filter-select" style="width:100%;height:36px"></select></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== DASHBOARD GERAL ===== -->
+  <section class="section hidden" id="kpiSection">
+    <div class="section-head"><span class="tick"></span><h2>Dashboard geral</h2></div>
+    <div class="kpis" id="kpis"></div>
+  </section>
+
+  <!-- ===== ALERTAS ===== -->
+  <section class="section hidden" id="alertSection">
+    <div class="section-head"><span class="tick"></span><h2>Alertas inteligentes</h2></div>
+    <div class="alerts" id="alerts"></div>
+  </section>
+
+  <!-- ===== TABS ===== -->
+  <section class="section hidden" id="mainSection">
+    <div class="tabs">
+      <button class="tab active" data-tab="tabela">Tabela</button>
+      <button class="tab" data-tab="graficos">Gráficos</button>
+      <button class="tab" data-tab="rankings">Rankings</button>
+      <button class="tab" data-tab="comparar">Comparar operadores</button>
+      <button class="tab hidden" data-tab="periodos" id="tabPeriodos">Comparar períodos</button>
+    </div>
+
+    <!-- TABELA -->
+    <div class="panel active" id="panel-tabela">
+      <div class="toolbar">
+        <div class="search">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+          <input id="searchInput" placeholder="Buscar operador...">
+        </div>
+        <select class="filter-select" id="statusFilter">
+          <option value="all">Todos os status</option>
+          <option value="acima">TMA acima da meta</option>
+          <option value="ok">TMA dentro da meta</option>
+          <option value="abandono">Abandono acima da meta</option>
+        </select>
+        <select class="filter-select" id="teamFilter"><option value="all">Todas as equipes</option></select>
+        <span style="flex:1"></span>
+        <div class="colpicker">
+          <button class="ghost-btn" id="btnAgents">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/></svg>
+            Atendentes
+          </button>
+          <div class="colpop" id="agentPop"></div>
+        </div>
+        <div class="colpicker">
+          <button class="ghost-btn" id="btnCols">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+            Colunas
+          </button>
+          <div class="colpop" id="colPop"></div>
+        </div>
+        <button class="ghost-btn" id="btnExpandTable" title="Exibir todos os operadores sem rolagem">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M8 3H5a2 2 0 0 0-2 2v3M16 3h3a2 2 0 0 1 2 2v3M8 21H5a2 2 0 0 1-2-2v-3M16 21h3a2 2 0 0 0 2-2v-3"/></svg>
+          Expandir tabela
+        </button>
+        <button class="ghost-btn" id="btnTableImg" title="Salvar a tabela completa como imagem">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="M21 15l-5-5L5 21"/></svg>
+          Salvar como imagem
+        </button>
+      </div>
+      <div class="tablecard">
+        <div class="tablescroll" id="tableScroll"><table class="data" id="dataTable"><thead id="tHead"></thead><tbody id="tBody"></tbody></table></div>
+        <div class="pager" id="pager"></div>
+      </div>
+    </div>
+
+    <!-- GRAFICOS -->
+    <div class="panel" id="panel-graficos">
+      <div class="toolbar hidden" id="chartGranBar">
+        <span class="hint" style="font-weight:600">Evolução ao longo do tempo:</span>
+        <div class="seg" id="chartGranSeg">
+          <button class="seg-btn active" data-gran="day">Por dia</button>
+          <button class="seg-btn" data-gran="month">Por mês</button>
+        </div>
+      </div>
+      <div class="chart-grid" id="chartTimeGrid"></div>
+      <div class="chart-grid">
+        <div class="chartcard"><h3>Evolução do TMA (equipe)</h3><div class="cc-wrap"><canvas id="chTma"></canvas></div></div>
+        <div class="chartcard"><h3>Chamadas atendidas por operador</h3><div class="cc-wrap"><canvas id="chAtend"></canvas></div></div>
+        <div class="chartcard"><h3>Chamadas abandonadas (evolução)</h3><div class="cc-wrap"><canvas id="chAband"></canvas></div></div>
+        <div class="chartcard"><h3>TMA por operador x meta</h3><div class="cc-wrap"><canvas id="chTmaOp"></canvas></div></div>
+      </div>
+    </div>
+
+    <!-- RANKINGS -->
+    <div class="panel" id="panel-rankings"><div class="rank-grid" id="rankGrid"></div></div>
+
+    <!-- COMPARAR -->
+    <div class="panel" id="panel-comparar">
+      <div class="toolbar">
+        <select class="filter-select" id="cmpA" style="min-width:220px"></select>
+        <span style="font-weight:700;color:var(--muted)">x</span>
+        <select class="filter-select" id="cmpB" style="min-width:220px"></select>
+      </div>
+      <div id="cmpResult"></div>
+    </div>
+
+    <!-- PERIODOS -->
+    <div class="panel" id="panel-periodos">
+      <div class="toolbar">
+        <span class="hint" style="font-weight:600">Comparar:</span>
+        <select class="filter-select" id="periodPreset" style="min-width:230px">
+          <option value="day">Último dia × dia anterior</option>
+          <option value="week">Semana atual × semana anterior</option>
+          <option value="month">Mês atual × mês anterior</option>
+        </select>
+      </div>
+      <div id="periodResult"></div>
+    </div>
+  </section>
+
+  <div class="foot">Painel SAC <b>Expresso Guanabara</b> &middot; ferramenta local, os dados permanecem no seu navegador.</div>
+</div>
+
+<!-- ===== OPERATOR MODAL ===== -->
+<div class="modal-back" id="opModal">
+  <div class="modal">
+    <div class="modal-head">
+      <div class="avatar" id="opAvatar">--</div>
+      <div class="mh-txt"><h2 id="opName">Operador</h2><span id="opTeam"></span></div>
+      <button class="mclose" id="opClose"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
+    </div>
+    <div class="modal-body">
+      <div class="mkpis" id="opKpis"></div>
+      <div class="section-head" id="opEvolHead" style="display:none"><span class="tick"></span><h2>Evolução no período</h2><span class="grow"></span><div class="seg" id="opGranSeg"><button class="seg-btn active" data-gran="day">Por dia</button><button class="seg-btn" data-gran="month">Por mês</button></div></div>
+      <div class="chart-grid hidden" id="opEvolGrid" style="margin-bottom:18px"></div>
+      <div class="section-head"><span class="tick"></span><h2 id="opChartTitle">Evolução do TMA (entre relatórios)</h2></div>
+      <div class="mchart"><canvas id="opChart"></canvas></div>
+      <div class="section-head"><span class="tick"></span><h2>Comparação com a equipe</h2></div>
+      <div id="opCompare" style="border:1px solid var(--line);border-radius:11px;overflow:hidden;margin-bottom:18px"></div>
+      <div class="section-head"><span class="tick"></span><h2>Observações e acompanhamento</h2></div>
+      <textarea class="obs-area" id="opObs" placeholder="Registre feedbacks, treinamentos e acompanhamentos deste operador..."></textarea>
+    </div>
+  </div>
+</div>
+
+<!-- ===== MAPPING MODAL ===== -->
+<div class="modal-back" id="mapModal">
+  <div class="modal" style="max-width:620px">
+    <div class="modal-head">
+      <div class="mh-txt"><h2>Conferir colunas</h2><span>Ajuste o mapeamento caso a detecção automática precise de correção</span></div>
+      <button class="mclose" id="mapClose"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
+    </div>
+    <div class="modal-body">
+      <div class="map-grid" id="mapGrid"></div>
+      <div style="margin-top:20px;display:flex;justify-content:flex-end;gap:10px">
+        <button class="ghost-btn" id="mapCancel">Cancelar</button>
+        <button class="tbtn solid" style="background:var(--gb-red);color:#fff" id="mapConfirm">Confirmar e montar painel</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============================================================
+   PAINEL SAC - EXPRESSO GUANABARA
+   Aplicacao frontend pura. Toda a logica roda no navegador.
+   ============================================================ */
+const STORE_KEY='sac_guanabara_v1';
+const state={ snapshots:[], metas:{tma:'03:30',atend:120,atendAuto:true,ns:90,aband:5}, obs:{}, theme:'light',
+  view:'last', sort:{key:'tma',dir:'asc'}, page:1, perPage:15, search:'', statusF:'all', teamF:'all', hiddenAgents:[],
+  anaMonth:'', anaDay:'', chartGran:'day', opGran:'day',
+  visible:['agente','atendidas','abandonadas','total','tma','ns','pctAtend','pctAband','trend'] };
+
+/* ---------- persistence ---------- */
+function save(){ try{ localStorage.setItem(STORE_KEY, JSON.stringify({
+  snapshots:state.snapshots, metas:state.metas, obs:state.obs, theme:state.theme, visible:state.visible, view:state.view, hiddenAgents:state.hiddenAgents }));
+}catch(e){/* modo memoria */} }
+function load(){ try{ const r=localStorage.getItem(STORE_KEY); if(!r) return; const d=JSON.parse(r);
+  if(d.snapshots) state.snapshots=d.snapshots; if(d.metas) state.metas=d.metas; if(d.obs) state.obs=d.obs;
+  if(d.theme) state.theme=d.theme; if(d.visible) state.visible=d.visible; if(d.view) state.view=d.view;
+  if(d.hiddenAgents) state.hiddenAgents=d.hiddenAgents;
+}catch(e){} }
+
+/* ---------- utils ---------- */
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+function norm(s){ return String(s==null?'':s).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,' ').trim(); }
+function parseBRNum(v){ if(v==null) return NaN; if(typeof v==='number') return v; let s=String(v).replace('%','').trim(); if(!s) return NaN;
+  const hasC=s.includes(','), hasD=s.includes('.');
+  if(hasC&&hasD) s=s.replace(/\./g,'').replace(',','.');           // 1.234,56 -> 1234.56
+  else if(hasC) s=s.replace(',','.');                              // 3,5 -> 3.5
+  else if(hasD && /^\d{1,3}(\.\d{3})+$/.test(s)) s=s.replace(/\./g,''); // 1.230 -> 1230 (milhar)
+  const n=parseFloat(s.replace(/[^0-9.\-]/g,'')); return n; }
+function parseTMA(v){ if(v==null) return null; let s=String(v).trim(); if(!s) return null;
+  if(s.includes(':')){ const p=s.split(':').map(x=>parseInt(x,10)||0); if(p.length===3) return p[0]*3600+p[1]*60+p[2]; if(p.length===2) return p[0]*60+p[1]; }
+  const n=parseBRNum(s); return isNaN(n)?null:Math.round(n); }
+function fmtTMA(sec){ if(sec==null||isNaN(sec)) return '--'; sec=Math.round(sec); const h=Math.floor(sec/3600),m=Math.floor((sec%3600)/60),s=sec%60,p=x=>String(x).padStart(2,'0'); return h>0?`${p(h)}:${p(m)}:${p(s)}`:`${p(m)}:${p(s)}`; }
+function parsePct(v){ const n=parseBRNum(v); if(isNaN(n)) return null; return (n>0&&n<=1)?n*100:n; }
+function fmtInt(n){ return (n==null||isNaN(n))?'--':Math.round(n).toLocaleString('pt-BR'); }
+function fmtPct(n){ return (n==null||isNaN(n))?'--':n.toLocaleString('pt-BR',{maximumFractionDigits:1})+'%'; }
+function metaTmaSec(){ return parseTMA(state.metas.tma)||210; }
+function computeAutoAtend(){ const rows=visibleRows(); if(!rows.length) return null; const t=rows.reduce((a,r)=>a+(r.atendidas||0),0); return Math.round(t/rows.length); }
+function syncAutoMetas(){ if(state.metas.atendAuto!==false){ const v=computeAutoAtend(); if(v!=null){ state.metas.atend=v; const el=$('#metaAtend'); if(el) el.value=v; } }
+  const hint=$('#metaAtendHint'); if(hint) hint.style.display = state.metas.atendAuto===false ? 'inline' : 'none'; }
+function toast(msg){ const t=$('#toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(t._t); t._t=setTimeout(()=>t.classList.remove('show'),2600); }
+function download(name,content,type){ const b=new Blob([content],{type}); const u=URL.createObjectURL(b); const a=document.createElement('a'); a.href=u; a.download=name; a.click(); URL.revokeObjectURL(u); }
+
+/* ---------- CSV parse ---------- */
+function detectDelim(line){ const c={';':(line.match(/;/g)||[]).length, ',':(line.match(/,/g)||[]).length, '\t':(line.match(/\t/g)||[]).length}; return Object.keys(c).sort((a,b)=>c[b]-c[a])[0]||','; }
+function parseCSV(text){ text=text.replace(/^\uFEFF/,''); const delim=detectDelim(text.split(/\r?\n/)[0]||'');
+  const rows=[]; let row=[],cur='',q=false;
+  for(let i=0;i<text.length;i++){ const c=text[i];
+    if(q){ if(c==='"'){ if(text[i+1]==='"'){cur+='"';i++;} else q=false; } else cur+=c; }
+    else { if(c==='"') q=true; else if(c===delim){row.push(cur);cur='';} else if(c==='\n'){row.push(cur);rows.push(row);row=[];cur='';} else if(c==='\r'){} else cur+=c; } }
+  if(cur.length||row.length){ row.push(cur); rows.push(row); }
+  return rows.filter(r=>r.some(x=>String(x).trim()!=='')); }
+
+/* ---------- column detection ---------- */
+const ALIASES={
+  agente:['agente','operador','atendente','colaborador','usuario','nome','login','ramal'],
+  tma:['tma','tempo medio de atendimento','tempo medio atendimento','tempo medio','tmo','tm atend','duracao media','media atend'],
+  ns:['nivel de servico','nivel servico','n servico','ns','sla','service level','nivel'],
+  abandonadas:['chamadas abandonadas','abandonadas','abandonos','abandono','perdidas','desistencias','nao atendidas'],
+  atendidas:['chamadas atendidas','atendidas','atendimentos','completadas','recebidas atendidas','n atendidas'],
+  total:['total de chamadas','total chamadas','total','chamadas','oferecidas','recebidas','entrantes'],
+  logado:['tempo logado','logado','tempo online','online','tempo disponivel'],
+  pausa:['tempo em pausa','tempo pausa','pausa','em pausa'],
+  equipe:['equipe','time','grupo','fila','skill','setor'],
+  supervisor:['supervisor','lider','coordenador','gestor'],
+  data:['data','dia','date','periodo','competencia'] };
+const FIELD_ORDER=['agente','tma','ns','abandonadas','atendidas','total','logado','pausa','equipe','supervisor','data'];
+function findHeaderRow(rows){ let best=0,bestScore=-1; for(let i=0;i<Math.min(rows.length,10);i++){ const h=rows[i].map(norm); let sc=0; for(const f of FIELD_ORDER){ if(ALIASES[f].some(a=>h.some(c=>c===a||c.includes(a)||a.includes(c)&&c.length>2))) sc++; }
+    if(h.some(c=>c.includes('status'))) sc++;
+    if(h.some(c=>c.includes('tempo em ligacao')||c.includes('tempo em espera'))) sc++;
+    if(h.filter(x=>x).length<2) sc-=2; if(sc>bestScore){bestScore=sc;best=i;} } return best; }
+function autoMap(header){ const H=header.map(norm); const used=new Set(); const map={};
+  for(const f of FIELD_ORDER){ let idx=-1;
+    for(const a of ALIASES[f]){ for(let i=0;i<H.length;i++){ if(used.has(i)) continue; if(H[i]===a){idx=i;break;} } if(idx>=0) break; }
+    if(idx<0){ for(const a of ALIASES[f]){ for(let i=0;i<H.length;i++){ if(used.has(i)) continue; if(H[i]&&(H[i].includes(a)||(a.includes(H[i])&&H[i].length>2))){idx=i;break;} } if(idx>=0) break; } }
+    map[f]=idx; if(idx>=0) used.add(idx); }
+  return map; }
+
+/* ---------- relatório analítico (nível de chamada) ---------- */
+const ANALYTIC_ALIASES={
+  agente:['agente','operador','atendente','usuario','ramal','operador responsavel'],
+  status:['status da chamada','status chamada','situacao da chamada','situacao','status'],
+  ligacao:['tempo em ligacao','tempo de ligacao','tempo ligacao','tempo falado','tempo de conversacao','tempo conversacao','duracao da chamada','duracao da ligacao','duracao'],
+  espera:['tempo em espera','tempo de espera','tempo espera','tempo em fila'],
+  data:['data inicio','data de inicio','data/hora','data hora','data','inicio'],
+  fila:['fila'],
+  setor:['setor'] };
+function analyticMap(header){ const H=header.map(norm); const map={};
+  for(const f in ANALYTIC_ALIASES){ let idx=-1;
+    for(const a of ANALYTIC_ALIASES[f]){ for(let i=0;i<H.length;i++){ if(H[i]===a){idx=i;break;} } if(idx>=0) break; }
+    if(idx<0){ for(const a of ANALYTIC_ALIASES[f]){ for(let i=0;i<H.length;i++){ if(H[i]&&H[i].includes(a)){idx=i;break;} } if(idx>=0) break; } }
+    map[f]=idx; }
+  return map; }
+function isAnalytic(header){ const H=header.map(norm);
+  const hasStatus=H.some(c=>c&&(c.includes('status')&&c.includes('chamada')||c==='status'||c.includes('situacao')));
+  const hasLig=H.some(c=>c&&(c.includes('tempo em ligacao')||c.includes('tempo de ligacao')||c.includes('tempo ligacao')||c.includes('tempo falado')||c.includes('tempo de conversacao')));
+  const hasAggAtend=H.some(c=>c==='chamadas atendidas'||c==='atendidas'||c==='chamadas abandonadas'||c==='abandonadas');
+  return hasStatus && hasLig && !hasAggAtend; }
+function classifyStatus(s){ const t=norm(s); if(!t) return 'other';
+  if(/(nao atend|nao complet|sem atend)/.test(t)) return 'aband';
+  if(/(abandon|desist|perdid|nao aceit|expirad|timeout|caiu)/.test(t)) return 'aband';
+  if(/(atend|complet|finaliz|sucesso|efetuad|realizad|encerrad)/.test(t)) return 'atend';
+  return 'other'; }
+function parseAnalyticDate(v){ if(v==null) return null; const s=String(v).trim(); if(!s) return null;
+  let m=s.match(/(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})/);
+  if(m){ let d=+m[1],mo=+m[2],y=+m[3]; if(y<100) y+=2000; const dt=new Date(y,mo-1,d); return isNaN(dt.getTime())?null:dt; }
+  m=s.match(/(\d{4})-(\d{1,2})-(\d{1,2})/);
+  if(m){ const dt=new Date(+m[1],+m[2]-1,+m[3]); return isNaN(dt.getTime())?null:dt; }
+  return null; }
+function dayKey(d){ return d?`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`:null; }
+function monthKey(d){ return d?`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`:null; }
+function parseAnalyticCalls(header,dataRows,amap){ const g=(r,k)=>amap[k]>=0?r[amap[k]]:undefined; const out=[];
+  for(const r of dataRows){ if(!r||!r.some(x=>String(x).trim()!=='')) continue;
+    const d=parseAnalyticDate(g(r,'data'));
+    out.push({ agente:(g(r,'agente')||'').toString().trim(), status:g(r,'status'), ligacao:g(r,'ligacao'), espera:g(r,'espera'),
+      equipe:(g(r,'setor')||g(r,'fila')||'').toString().trim(), day:dayKey(d), month:monthKey(d) }); }
+  return out; }
+function aggregateAnalyticCalls(calls){ const m=new Map(); const bucket='(Abandonadas na fila)';
+  for(const c of calls){ const st=classifyStatus(c.status); let ag=c.agente;
+    if(st==='aband'&&!ag) ag=bucket; if(!ag) continue;
+    if(!m.has(ag)) m.set(ag,{agente:ag,atend:0,aband:0,_ts:0,_tn:0,_es:0,_en:0,equipe:''});
+    const a=m.get(ag);
+    if(ag!==bucket&&!a.equipe&&c.equipe) a.equipe=c.equipe;
+    const esp=parseTMA(c.espera); if(esp!=null){ a._es+=esp; a._en++; }
+    if(st==='atend'){ a.atend++; const t=parseTMA(c.ligacao); if(t!=null){ a._ts+=t; a._tn++; } }
+    else if(st==='aband'){ a.aband++; } }
+  return [...m.values()].map(a=>{ const total=a.atend+a.aband; return {
+    agente:a.agente, atendidas:a.atend, abandonadas:a.aband, total,
+    tma:a._tn?a._ts/a._tn:null, espera:a._en?a._es/a._en:null, ns:null, logado:null, pausa:null,
+    equipe:a.equipe, supervisor:'' }; }); }
+function buildRowsAnalytic(header,dataRows,amap){ return aggregateAnalyticCalls(parseAnalyticCalls(header,dataRows,amap)); }
+
+/* ---------- build snapshot ---------- */
+let pending=null; // {name, header, dataRows, map}
+function buildRows(header,dataRows,map){ const out=[];
+  for(const r of dataRows){ const g=k=>map[k]>=0?r[map[k]]:undefined;
+    const agente=(g('agente')||'').toString().trim(); if(!agente) continue;
+    let atend=parseBRNum(g('atendidas')); if(isNaN(atend)) atend=0;
+    let aband=parseBRNum(g('abandonadas')); if(isNaN(aband)) aband=0;
+    let total=parseBRNum(g('total')); if(isNaN(total)) total=atend+aband;
+    const rec={ agente, atendidas:atend, abandonadas:aband, total,
+      tma:parseTMA(g('tma')), ns:parsePct(g('ns')),
+      logado:parseTMA(g('logado')), pausa:parseTMA(g('pausa')),
+      equipe:(g('equipe')||'').toString().trim(), supervisor:(g('supervisor')||'').toString().trim() };
+    out.push(rec); }
+  return out; }
+function cleanName(fn){ return fn.replace(/\.[^.]+$/,'').replace(/[_\-]+/g,' ').trim(); }
+function addSnapshot(name,rows,type,calls){ const label=cleanName(name)||('Relatório '+(state.snapshots.length+1));
+  state.snapshots.push({ id:'s'+Date.now()+'_'+Math.random().toString(36).slice(2,6), label, order:Date.now()+state.snapshots.length, rows, type:type||'sintetico', calls:calls||null }); }
+
+/* ---------- aggregation ---------- */
+function aggregate(rows){ const m=new Map();
+  for(const r of rows){ const k=r.agente; if(!m.has(k)) m.set(k,{agente:k,atendidas:0,abandonadas:0,total:0,_tw:0,_ts:0,_nw:0,_ns:0,_ew:0,_es:0,logado:0,pausa:0,equipe:r.equipe,supervisor:r.supervisor});
+    const a=m.get(k); a.atendidas+=r.atendidas||0; a.abandonadas+=r.abandonadas||0; a.total+=r.total||0;
+    if(r.tma!=null){ const w=(r.total||r.atendidas||1); a._tw+=w; a._ts+=r.tma*w; }
+    if(r.ns!=null){ const w=(r.total||1); a._nw+=w; a._ns+=r.ns*w; }
+    if(r.espera!=null){ const w=(r.total||1); a._ew+=w; a._es+=r.espera*w; }
+    if(r.logado!=null) a.logado+=r.logado; if(r.pausa!=null) a.pausa+=r.pausa;
+    if(!a.equipe&&r.equipe) a.equipe=r.equipe; if(!a.supervisor&&r.supervisor) a.supervisor=r.supervisor; }
+  return [...m.values()].map(a=>({ agente:a.agente, atendidas:a.atendidas, abandonadas:a.abandonadas, total:a.total,
+    tma:a._tw?a._ts/a._tw:null, ns:a._nw?a._ns/a._nw:null, espera:a._ew?a._es/a._ew:null, logado:a.logado||null, pausa:a.pausa||null,
+    equipe:a.equipe, supervisor:a.supervisor,
+    pctAtend:a.total?a.atendidas/a.total*100:null, pctAband:a.total?a.abandonadas/a.total*100:null })); }
+function currentRows(){ if(!state.snapshots.length) return [];
+  if(state.view==='all') return aggregate(state.snapshots.flatMap(s=>s.rows));
+  const snap=state.snapshots.find(s=>s.id===state.view)||state.snapshots[state.snapshots.length-1];
+  if(snap.type==='analitico' && snap.calls && (state.anaMonth||state.anaDay)){
+    let calls=snap.calls;
+    if(state.anaMonth) calls=calls.filter(c=>c.month===state.anaMonth);
+    if(state.anaDay) calls=calls.filter(c=>c.day===state.anaDay);
+    return aggregate(aggregateAnalyticCalls(calls));
+  }
+  return aggregate(snap.rows); }
+function visibleRows(){ const h=new Set(state.hiddenAgents||[]); return currentRows().filter(r=>!h.has(r.agente)); }
+function orderedSnaps(){ return [...state.snapshots].sort((a,b)=>a.order-b.order); }
+function opSeries(name){ return orderedSnaps().map(s=>{ const rec=aggregate(s.rows).find(r=>r.agente===name); return {label:s.label, rec}; }); }
+function teamSeries(){ return orderedSnaps().map(s=>{ const ag=aggregate(s.rows); const tw=ag.reduce((x,r)=>x+(r.tma!=null?(r.total||1):0),0); const ts=ag.reduce((x,r)=>x+(r.tma!=null?r.tma*(r.total||1):0),0);
+  return {label:s.label, tma:tw?ts/tw:null, atend:ag.reduce((x,r)=>x+r.atendidas,0), aband:ag.reduce((x,r)=>x+r.abandonadas,0),
+    total:ag.reduce((x,r)=>x+r.total,0) }; }); }
+
+/* ---------- séries temporais (relatório analítico) ---------- */
+function activeAnalyticSnap(){ if(state.view==='all') return null; const snap=state.snapshots.find(s=>s.id===state.view); return (snap&&snap.type==='analitico'&&snap.calls&&snap.calls.some(c=>c.day))?snap:null; }
+function analyticGranularities(snap){ const months=new Set(snap.calls.map(c=>c.month).filter(Boolean)); const days=new Set(snap.calls.map(c=>c.day).filter(Boolean));
+  return {hasDay:days.size>1, hasMonth:months.size>1, dayCount:days.size, monthCount:months.size}; }
+// agrega métricas de equipe para um conjunto de chamadas
+function teamMetricsFromCalls(calls){ const rows=aggregateAnalyticCalls(calls).filter(r=>r.agente!=='(Abandonadas na fila)'||true);
+  const atend=rows.reduce((a,r)=>a+r.atendidas,0), aband=rows.reduce((a,r)=>a+r.abandonadas,0), total=atend+aband;
+  const tw=rows.reduce((a,r)=>a+(r.tma!=null?r.atendidas:0),0), tsum=rows.reduce((a,r)=>a+(r.tma!=null?r.tma*r.atendidas:0),0);
+  const ew=rows.reduce((a,r)=>a+(r.espera!=null?r.total:0),0), esum=rows.reduce((a,r)=>a+(r.espera!=null?r.espera*r.total:0),0);
+  return { atendidas:atend, abandonadas:aband, total, tma:tw?tsum/tw:null, espera:ew?esum/ew:null, pctAband:total?aband/total*100:null }; }
+// série temporal da equipe por 'day' ou 'month'
+function teamTimeSeries(snap,grain){ const keys=[...new Set(snap.calls.map(c=>c[grain]).filter(Boolean))].sort();
+  return keys.map(k=>({ key:k, label: grain==='month'?fmtMonthKey(k):fmtDayKey(k), ...teamMetricsFromCalls(snap.calls.filter(c=>c[grain]===k)) })); }
+// série temporal de um operador por 'day' ou 'month'
+function opTimeSeries(snap,name,grain){ const keys=[...new Set(snap.calls.map(c=>c[grain]).filter(Boolean))].sort();
+  return keys.map(k=>{ const rows=aggregateAnalyticCalls(snap.calls.filter(c=>c[grain]===k)); const r=rows.find(x=>x.agente===name)||{};
+    return { key:k, label: grain==='month'?fmtMonthKey(k):fmtDayKey(k), atendidas:r.atendidas||0, abandonadas:r.abandonadas||0, total:r.total||0, tma:r.tma??null, espera:r.espera??null }; }); }
+
+/* ---------- comparativo entre períodos ---------- */
+function dayKeyToDate(dk){ const [y,m,d]=dk.split('-').map(Number); return new Date(y,m-1,d); }
+function isoWeekKey(date){ const d=new Date(date.getFullYear(),date.getMonth(),date.getDate()); const day=(d.getDay()+6)%7; d.setDate(d.getDate()-day+3); const firstThu=new Date(d.getFullYear(),0,4); const week=1+Math.round(((d-firstThu)/86400000-3+((firstThu.getDay()+6)%7))/7); return d.getFullYear()+'-W'+String(week).padStart(2,'0'); }
+// define os dois conjuntos de chamadas (atual x anterior) conforme o preset
+function periodPartition(snap,preset){ const calls=snap.calls.filter(c=>c.day);
+  if(preset==='month'){ const months=[...new Set(calls.map(c=>c.month))].sort(); if(months.length<2) return null;
+    const cur=months[months.length-1], prev=months[months.length-2];
+    return { curLabel:fmtMonthKey(cur), prevLabel:fmtMonthKey(prev), cur:calls.filter(c=>c.month===cur), prev:calls.filter(c=>c.month===prev) }; }
+  if(preset==='day'){ const days=[...new Set(calls.map(c=>c.day))].sort(); if(days.length<2) return null;
+    const cur=days[days.length-1], prev=days[days.length-2];
+    return { curLabel:fmtDayKey(cur), prevLabel:fmtDayKey(prev), cur:calls.filter(c=>c.day===cur), prev:calls.filter(c=>c.day===prev) }; }
+  if(preset==='week'){ const withWk=calls.map(c=>({...c, wk:isoWeekKey(dayKeyToDate(c.day))}));
+    const weeks=[...new Set(withWk.map(c=>c.wk))].sort(); if(weeks.length<2) return null;
+    const cur=weeks[weeks.length-1], prev=weeks[weeks.length-2];
+    const range=wk=>{ const ds=withWk.filter(c=>c.wk===wk).map(c=>c.day).sort(); return fmtDayKey(ds[0])+' a '+fmtDayKey(ds[ds.length-1]); };
+    return { curLabel:'Semana '+cur.split('-W')[1]+' ('+range(cur)+')', prevLabel:'Semana '+prev.split('-W')[1]+' ('+range(prev)+')', cur:withWk.filter(c=>c.wk===cur), prev:withWk.filter(c=>c.wk===prev) }; }
+  return null; }
+function renderPeriods(){ const box=$('#periodResult'); const snap=activeAnalyticSnap();
+  if(!snap){ box.innerHTML='<div class="empty">A comparação entre períodos usa as datas do relatório analítico. Importe um relatório analítico para habilitar.</div>'; return; }
+  const preset=$('#periodPreset').value; const part=periodPartition(snap,preset);
+  if(!part){ const nome=preset==='month'?'dois meses':preset==='week'?'duas semanas':'dois dias'; box.innerHTML=`<div class="empty">O relatório atual não contém ${nome} distintos para comparar. Selecione outra opção ou importe um período maior.</div>`; return; }
+  const cur=teamMetricsFromCalls(part.cur), prev=teamMetricsFromCalls(part.prev);
+  // métricas: [rótulo, valor, formatador, melhorQuandoAumenta]
+  const metrics=[
+    ['Chamadas atendidas', m=>m.atendidas, fmtInt, true],
+    ['Chamadas abandonadas', m=>m.abandonadas, fmtInt, false],
+    ['Total de chamadas', m=>m.total, fmtInt, true],
+    ['TMA', m=>m.tma, fmtTMA, false],
+    ['Tempo médio de espera', m=>m.espera, fmtTMA, false],
+    ['% de abandono', m=>m.pctAband, v=>v==null?'--':fmtPct(v), false] ];
+  box.innerHTML=`
+  <div class="period-head">
+    <div class="period-chip"><span class="pc-l">Período atual</span><span class="pc-v">${part.curLabel}</span></div>
+    <div class="period-chip arrow">➜</div>
+    <div class="period-chip"><span class="pc-l">Período anterior</span><span class="pc-v">${part.prevLabel}</span></div>
+  </div>
+  <div class="period-metrics">
+  ${metrics.map(([label,get,fmt,upGood])=>{ const cv=get(cur), pv=get(prev);
+    let deltaHtml='<span class="pm-delta flat">sem base anterior</span>';
+    if(cv!=null && pv!=null){ const diff=cv-pv; const pct = pv!==0 ? (diff/pv*100) : (cv!==0?100:0);
+      const improved = upGood ? diff>0 : diff<0; const worse = upGood ? diff<0 : diff>0;
+      const cls = diff===0?'flat':(improved?'up':'down'); const arrow = diff===0?'=':(diff>0?'▲':'▼');
+      const pctTxt = (Math.abs(pct)).toLocaleString('pt-BR',{maximumFractionDigits:1})+'%';
+      deltaHtml=`<span class="pm-delta ${cls}">${arrow} ${diff===0?'estável':pctTxt}</span>`; }
+    return `<div class="pm-card"><div class="pm-label">${label}</div>
+      <div class="pm-vals"><span class="pm-cur">${fmt(cv)}</span><span class="pm-prev">antes: ${fmt(pv)}</span></div>
+      ${deltaHtml}</div>`; }).join('')}
+  </div>`; }
+
+/* ---------- columns definition ---------- */
+const COLS=[
+  {k:'agente',label:'Agente',type:'name'},
+  {k:'trend',label:'Tendência',type:'trend'},
+  {k:'atendidas',label:'Atendidas',type:'int'},
+  {k:'abandonadas',label:'Abandonadas',type:'int'},
+  {k:'total',label:'Total',type:'int'},
+  {k:'tma',label:'TMA',type:'tma'},
+  {k:'ns',label:'Nível serviço',type:'pct'},
+  {k:'pctAtend',label:'% Atendidas',type:'pct'},
+  {k:'pctAband',label:'% Abandono',type:'pctAband'},
+  {k:'logado',label:'Tempo logado',type:'tma'},
+  {k:'pausa',label:'Tempo pausa',type:'tma'} ];
+function colExists(k,rows){ if(k==='agente'||k==='total') return true; if(k==='trend') return state.snapshots.length>1; if(k==='pctAtend'||k==='pctAband') return true;
+  return rows.some(r=>r[k]!=null&&r[k]!==''&&!(typeof r[k]==='number'&&isNaN(r[k]))); }
+
+/* ---------- status helpers ---------- */
+function tmaStatus(sec){ if(sec==null) return null; const meta=metaTmaSec(); if(sec<=meta) return 'ok'; if(sec<=meta*1.1) return 'warn'; return 'bad'; }
+function abandStatus(p){ if(p==null) return null; if(p<=2) return 'ok'; if(p<=state.metas.aband) return 'warn'; return 'bad'; }
+function trendOf(name){ const s=opSeries(name).filter(x=>x.rec&&x.rec.tma!=null); if(s.length<2) return null;
+  const cur=s[s.length-1].rec.tma, prev=s[s.length-2].rec.tma; const d=(cur-prev)/prev*100;
+  if(d<=-3) return {dir:'down',txt:'▼ '+Math.abs(d).toFixed(0)+'%'}; if(d>=3) return {dir:'up',txt:'▲ '+d.toFixed(0)+'%'}; return {dir:'flat',txt:'= estável'}; }
+
+/* ============================================================
+   RENDER
+   ============================================================ */
+function renderAll(){ const has=state.snapshots.length>0;
+  $('#importSection').classList.toggle('hidden', has);
+  ['configSection','kpiSection','alertSection','mainSection'].forEach(id=>$('#'+id).classList.toggle('hidden', !has));
+  $('#fileChips').style.display = has?'flex':'none';
+  if(!has){ renderChips(); return; }
+  renderChips(); renderSnapSelect(); renderAnaFilters(); syncAutoMetas(); renderKpis(); renderAlerts(); renderTeamFilter();
+  renderColPicker(); renderAgentFilter(); renderTable(); renderCharts(); renderRankings(); renderCompareSelectors();
+  renderPeriodsTab();
+}
+function renderPeriodsTab(){ const isAna=!!activeAnalyticSnap(); const tab=$('#tabPeriodos');
+  tab.classList.toggle('hidden', !isAna);
+  if(!isAna && tab.classList.contains('active')){ // sair da aba se ficou indisponível
+    tab.classList.remove('active'); $('#panel-periodos').classList.remove('active');
+    $('.tab[data-tab="tabela"]').classList.add('active'); $('#panel-tabela').classList.add('active'); }
+  if(isAna) renderPeriods();
+}
+function renderChips(){ const c=$('#fileChips'); c.innerHTML='';
+  orderedSnaps().forEach(s=>{ const el=document.createElement('div'); el.className='pill'; el.style.background='var(--card)'; el.style.border='1px solid var(--line)'; el.style.color='var(--ink-2)'; el.style.padding='6px 10px'; el.style.borderRadius='9px';
+    el.innerHTML=`<span class="pd" style="background:var(--gb-red)"></span> ${s.label} <span style="color:var(--muted);margin-left:4px">(${s.rows.length})</span> <button style="border:none;background:none;color:var(--muted);cursor:pointer;font-weight:700;margin-left:2px" data-del="${s.id}">×</button>`;
+    c.appendChild(el); }); }
+function renderSnapSelect(){ const sel=$('#snapSelect'); sel.innerHTML='';
+  orderedSnaps().forEach(s=>{ const o=document.createElement('option'); o.value=s.id; o.textContent=s.label; sel.appendChild(o); });
+  const all=document.createElement('option'); all.value='all'; all.textContent='Todos (somado)'; sel.appendChild(all);
+  if(state.view==='last'||!orderedSnaps().find(s=>s.id===state.view)) state.view=orderedSnaps()[orderedSnaps().length-1].id;
+  sel.value=state.view;
+  $('#periodLabel').textContent = state.view==='all'?('Somando '+state.snapshots.length+' relatórios'):('Exibindo: '+(orderedSnaps().find(s=>s.id===state.view)||{}).label); }
+
+const MESES_PT=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+function fmtMonthKey(mk){ if(!mk) return mk; const [y,m]=mk.split('-'); return `${MESES_PT[(+m)-1]}/${y}`; }
+function fmtDayKey(dk){ if(!dk) return dk; const [y,m,d]=dk.split('-'); return `${d}/${m}/${y}`; }
+function renderAnaFilters(){ const wrap=$('#anaFilters'); const snap=state.snapshots.find(s=>s.id===state.view);
+  const isAna = snap && snap.type==='analitico' && snap.calls && snap.calls.some(c=>c.day);
+  wrap.classList.toggle('hidden', !isAna);
+  if(!isAna){ state.anaMonth=''; state.anaDay=''; return; }
+  const months=[...new Set(snap.calls.map(c=>c.month).filter(Boolean))].sort();
+  const monthWrap=$('#anaMonthWrap'), monthSel=$('#anaMonthFilter');
+  const multiMonth=months.length>1; monthWrap.classList.toggle('hidden', !multiMonth);
+  if(!multiMonth) state.anaMonth='';
+  if(state.anaMonth && !months.includes(state.anaMonth)) state.anaMonth='';
+  monthSel.innerHTML='<option value="">Todos os meses</option>'+months.map(m=>`<option value="${m}" ${state.anaMonth===m?'selected':''}>${fmtMonthKey(m)}</option>`).join('');
+  let days=[...new Set(snap.calls.filter(c=>!state.anaMonth||c.month===state.anaMonth).map(c=>c.day).filter(Boolean))].sort();
+  if(state.anaDay && !days.includes(state.anaDay)) state.anaDay='';
+  const daySel=$('#anaDayFilter');
+  daySel.innerHTML='<option value="">Todos os dias</option>'+days.map(d=>`<option value="${d}" ${state.anaDay===d?'selected':''}>${fmtDayKey(d)}</option>`).join(''); }
+
+function renderKpis(){ const rows=visibleRows(); const box=$('#kpis'); const meta=metaTmaSec();
+  const totalAtend=rows.reduce((a,r)=>a+r.atendidas,0), totalAband=rows.reduce((a,r)=>a+r.abandonadas,0);
+  const totalTot=rows.reduce((a,r)=>a+r.total,0);
+  const tmaRows=rows.filter(r=>r.tma!=null); const tw=tmaRows.reduce((a,r)=>a+(r.total||1),0); const avgTma=tw?tmaRows.reduce((a,r)=>a+r.tma*(r.total||1),0)/tw:null;
+  const nsRows=rows.filter(r=>r.ns!=null); const nsw=nsRows.reduce((a,r)=>a+(r.total||1),0); const avgNs=nsw?nsRows.reduce((a,r)=>a+r.ns*(r.total||1),0)/nsw:null;
+  const best=tmaRows.slice().sort((a,b)=>a.tma-b.tma)[0]; const worst=tmaRows.slice().sort((a,b)=>b.tma-a.tma)[0];
+  const acima=tmaRows.filter(r=>r.tma>meta).length, dentro=tmaRows.filter(r=>r.tma<=meta).length;
+  const pctAband=totalTot?totalAband/totalTot*100:null;
+  const nsGeral = avgNs!=null?avgNs:(totalTot?totalAtend/totalTot*100:null);
+  const cards=[
+    {c:'', l:'Chamadas atendidas', v:fmtInt(totalAtend), s:`de ${fmtInt(totalTot)} no total`},
+    {c:'bad', l:'Chamadas abandonadas', v:fmtInt(totalAband), s:`${fmtPct(pctAband)} do total`},
+    {c:'gold', l:'TMA médio', v:fmtTMA(avgTma), s:`meta ${state.metas.tma} &middot; ${avgTma!=null&&avgTma<=meta?'<strong style="color:var(--ok)">dentro</strong>':'<strong style="color:var(--bad)">acima</strong>'}`},
+    {c:'', l:'Nível de serviço geral', v:fmtPct(nsGeral), s:`meta ${state.metas.ns}%`},
+    {c:'ok', l:'Melhor operador (TMA)', v:best?fmtTMA(best.tma):'--', s:best?best.agente:''},
+    {c:'bad', l:'Pior operador (TMA)', v:worst?fmtTMA(worst.tma):'--', s:worst?worst.agente:''},
+    {c:'ok', l:'Dentro da meta de TMA', v:fmtInt(dentro), s:`de ${rows.length} operadores`},
+    {c:'bad', l:'Acima da meta de TMA', v:fmtInt(acima), s:`de ${rows.length} operadores`},
+    {c:'gold', l:'Média de chamadas / operador', v:rows.length?fmtInt(totalAtend/rows.length):'--', s:`${rows.length} operadores`} ];
+  box.innerHTML=cards.map(k=>`<div class="kpi ${k.c}"><div class="k-label">${k.l}</div><div class="k-value">${k.v}</div><div class="k-sub">${k.s||''}</div></div>`).join(''); }
+
+function renderAlerts(){ const box=$('#alerts'); const rows=visibleRows(); const meta=metaTmaSec(); const out=[];
+  rows.forEach(r=>{ const st=tmaStatus(r.tma); if(st==='bad') out.push({t:'r',h:`<b>${r.agente}</b> está com TMA de ${fmtTMA(r.tma)}, acima da meta (${state.metas.tma}).`});
+    if(r.pctAband!=null&&r.pctAband>state.metas.aband) out.push({t:'r',h:`<b>${r.agente}</b> com ${fmtPct(r.pctAband)} de chamadas abandonadas, acima do limite de ${state.metas.aband}%.`}); });
+  if(state.snapshots.length>1){ orderedSnaps(); 
+    rows.forEach(r=>{ const s=opSeries(r.agente).filter(x=>x.rec); 
+      // TMA acima da meta em >=5 snapshots consecutivos (a partir do ultimo)
+      let cons=0; for(let i=s.length-1;i>=0;i--){ if(s[i].rec.tma!=null&&s[i].rec.tma>meta) cons++; else break; }
+      if(cons>=5) out.push({t:'r',h:`<b>${r.agente}</b> está com TMA acima da meta há ${cons} relatórios seguidos.`});
+      // queda >20% atendidas
+      if(s.length>=2&&s[s.length-2].rec){ const cur=s[s.length-1].rec.atendidas, prev=s[s.length-2].rec.atendidas; if(prev>0&&(cur-prev)/prev<=-0.2) out.push({t:'r',h:`<b>${r.agente}</b> teve queda de ${Math.abs((cur-prev)/prev*100).toFixed(0)}% nas chamadas atendidas.`}); }
+      // TMA subindo 3+ seguidos
+      const ts=s.filter(x=>x.rec.tma!=null).map(x=>x.rec.tma); if(ts.length>=3){ let rising=true; for(let i=ts.length-3;i<ts.length-1;i++){ if(!(ts[i+1]>ts[i])) rising=false; } if(rising) out.push({t:'y',h:`<b>${r.agente}</b> apresenta aumento contínuo do TMA nos últimos relatórios.`}); }
+      // melhora significativa
+      if(ts.length>=2){ const d=(ts[ts.length-1]-ts[ts.length-2])/ts[ts.length-2]; if(d<=-0.15) out.push({t:'g',h:`<b>${r.agente}</b> reduziu o TMA em ${Math.abs(d*100).toFixed(0)}%, melhora significativa.`}); }
+    }); }
+  if(!out.length){ box.innerHTML=`<div class="alert g"><span class="dot"></span><div class="a-txt">Nenhum ponto de atenção crítico no período. Todos os operadores dentro dos parâmetros configurados.</div></div>`; return; }
+  const order={r:0,y:1,g:2}; out.sort((a,b)=>order[a.t]-order[b.t]);
+  box.innerHTML=out.slice(0,12).map(a=>`<div class="alert ${a.t}"><span class="dot"></span><div class="a-txt">${a.h}</div></div>`).join(''); }
+
+function renderTeamFilter(){ const rows=currentRows(); const teams=[...new Set(rows.map(r=>r.equipe).filter(Boolean))].sort(); const sel=$('#teamFilter');
+  sel.innerHTML='<option value="all">Todas as equipes</option>'+teams.map(t=>`<option value="${t}">${t}</option>`).join('');
+  sel.parentElement && (sel.style.display=teams.length?'':'none'); sel.value=state.teamF; }
+
+function renderColPicker(){ const rows=currentRows(); const pop=$('#colPop'); pop.innerHTML='';
+  COLS.forEach(c=>{ if(c.k==='agente') return; if(!colExists(c.k,rows)) return;
+    const on=state.visible.includes(c.k);
+    const row=document.createElement('div'); row.className='cp-row';
+    row.innerHTML=`<input type="checkbox" id="cp_${c.k}" ${on?'checked':''}><label for="cp_${c.k}">${c.label}</label>`;
+    row.querySelector('input').addEventListener('change',e=>{ if(e.target.checked){ if(!state.visible.includes(c.k)) state.visible.push(c.k); } else state.visible=state.visible.filter(x=>x!==c.k); save(); renderTable(); });
+    pop.appendChild(row); }); }
+function renderAgentFilter(){ const pop=$('#agentPop'); if(!pop) return;
+  const names=[...new Set(currentRows().map(r=>r.agente))].sort((a,b)=>norm(a).localeCompare(norm(b)));
+  const hidden=new Set(state.hiddenAgents||[]);
+  const head=`<div style="display:flex;gap:12px;margin-bottom:8px;padding:0 3px"><button type="button" class="linkbtn" data-act="all">Marcar todos</button><button type="button" class="linkbtn" data-act="none">Limpar</button></div>`;
+  pop.innerHTML=head + (names.map(n=>`<div class="cp-row"><input type="checkbox" ${hidden.has(n)?'':'checked'} data-name="${n.replace(/"/g,'&quot;')}"><label>${n}</label></div>`).join('') || '<div style="color:var(--muted);font-size:13px;padding:6px">Sem atendentes.</div>');
+  const btn=$('#btnAgents'); if(btn) btn.classList.toggle('flt-on', hidden.size>0);
+  const refresh=()=>{ save(); renderKpis(); renderAlerts(); renderTable(); renderCharts(); renderRankings(); renderCompareSelectors(); };
+  pop.querySelectorAll('.cp-row label').forEach(l=>l.addEventListener('click',()=>{ const cb=l.previousElementSibling; cb.checked=!cb.checked; cb.dispatchEvent(new Event('change')); }));
+  pop.querySelectorAll('input[type=checkbox]').forEach(cb=>cb.addEventListener('change',()=>{ const n=cb.getAttribute('data-name'); const set=new Set(state.hiddenAgents||[]); if(cb.checked) set.delete(n); else set.add(n); state.hiddenAgents=[...set]; if(btn) btn.classList.toggle('flt-on', set.size>0); refresh(); }));
+  pop.querySelectorAll('button[data-act]').forEach(b=>b.addEventListener('click',()=>{ state.hiddenAgents = b.dataset.act==='all' ? [] : names.slice(); renderAgentFilter(); refresh(); })); }
+
+function filteredSortedRows(){ let rows=visibleRows();
+  if(state.teamF!=='all') rows=rows.filter(r=>r.equipe===state.teamF);
+  if(state.search){ const q=norm(state.search); rows=rows.filter(r=>norm(r.agente).includes(q)); }
+  const meta=metaTmaSec();
+  if(state.statusF==='acima') rows=rows.filter(r=>r.tma!=null&&r.tma>meta);
+  else if(state.statusF==='ok') rows=rows.filter(r=>r.tma!=null&&r.tma<=meta);
+  else if(state.statusF==='abandono') rows=rows.filter(r=>r.pctAband!=null&&r.pctAband>state.metas.aband);
+  const k=state.sort.key, dir=state.sort.dir==='asc'?1:-1;
+  rows.sort((a,b)=>{ let x=a[k],y=b[k]; if(k==='agente'){ return norm(x).localeCompare(norm(y))*dir; }
+    x=(x==null||isNaN(x))?(dir>0?Infinity:-Infinity):x; y=(y==null||isNaN(y))?(dir>0?Infinity:-Infinity):y; return (x-y)*dir; });
+  return rows; }
+
+function renderTable(){ const rows=currentRows(); const cols=COLS.filter(c=>c.k==='agente'||(state.visible.includes(c.k)&&colExists(c.k,rows)));
+  const thead=$('#tHead'), tbody=$('#tBody');
+  thead.innerHTML='<tr>'+cols.map(c=>{ const sorted=state.sort.key===c.k; const arrow=sorted?(state.sort.dir==='asc'?'▲':'▼'):'↕';
+    return `<th class="${c.type==='name'?'name-col':''} ${sorted?'sorted':''}" data-sort="${c.k}">${c.label}<span class="arrow">${arrow}</span></th>`; }).join('')+'</tr>';
+  const all=filteredSortedRows();
+  tbody.innerHTML=all.map((r,i)=>{ const gi=i+1;
+    return '<tr>'+cols.map(c=>cell(r,c,gi)).join('')+'</tr>'; }).join('') || `<tr><td colspan="${cols.length}"><div class="empty">Nenhum operador encontrado.</div></td></tr>`;
+  $$('#tHead th').forEach(th=>th.addEventListener('click',()=>{ const k=th.dataset.sort; if(state.sort.key===k) state.sort.dir=state.sort.dir==='asc'?'desc':'asc'; else {state.sort.key=k;state.sort.dir=k==='agente'?'asc':(k==='atendidas'||k==='total'?'desc':'asc');} renderTable(); }));
+  $$('#tBody td.name-col').forEach(td=>td.addEventListener('click',()=>openOperator(td.dataset.name)));
+  renderPager(all.length); }
+function cell(r,c,gi){ const v=r[c.k];
+  switch(c.type){
+    case 'name': return `<td class="name-col" data-name="${r.agente}"><span class="rank-badge">${gi}</span>${r.agente}</td>`;
+    case 'int': return `<td class="cell-num num">${fmtInt(v)}</td>`;
+    case 'pct': return `<td class="cell-num num">${fmtPct(v)}</td>`;
+    case 'pctAband':{ const st=abandStatus(v); return `<td class="cell-num">${v==null?'--':`<span class="pill ${st||''}"><span class="pd"></span>${fmtPct(v)}</span>`}</td>`; }
+    case 'tma':{ if(c.k==='tma'){ const st=tmaStatus(v); return `<td>${v==null?'--':`<span class="pill ${st||''}"><span class="pd"></span>${fmtTMA(v)}</span>`}</td>`; } return `<td class="num">${fmtTMA(v)}</td>`; }
+    case 'trend':{ const t=trendOf(r.agente); return `<td>${t?`<span class="trend ${t.dir}">${t.txt}</span>`:'--'}</td>`; }
+    default: return `<td>${v==null?'--':v}</td>`; } }
+function renderPager(total){ const p=$('#pager'); p.innerHTML=`<div class="pinfo">${total} operador(es) exibido(s) em página única</div>`; }
+
+/* ---------- charts ---------- */
+const charts={};
+function mk(id,cfg){ if(typeof Chart==='undefined'){ return; } if(charts[id]) charts[id].destroy(); const el=$('#'+id); if(!el) return; const cs=getComputedStyle(document.body); Chart.defaults.color=cs.getPropertyValue('--muted').trim(); Chart.defaults.font.family="Inter, sans-serif"; charts[id]=new Chart(el,cfg); }
+const C={red:()=>getComputedStyle(document.body).getPropertyValue('--gb-red').trim(), gold:()=>getComputedStyle(document.body).getPropertyValue('--gb-gold').trim(), line:()=>getComputedStyle(document.body).getPropertyValue('--line').trim(), ok:()=>getComputedStyle(document.body).getPropertyValue('--ok').trim(), bad:()=>getComputedStyle(document.body).getPropertyValue('--bad').trim(), warn:()=>getComputedStyle(document.body).getPropertyValue('--warn').trim()};
+function gridCfg(){ return {grid:{color:C.line()},ticks:{}}; }
+function renderChartTimeSeries(){ const grid=$('#chartTimeGrid'); const bar=$('#chartGranBar'); const snap=activeAnalyticSnap();
+  if(!snap){ bar.classList.add('hidden'); grid.innerHTML=''; return; }
+  const g=analyticGranularities(snap);
+  // se só há um dia, não há evolução por dia; se só um mês, esconde botão mês
+  const canDay=g.hasDay, canMonth=g.hasMonth;
+  if(!canDay && !canMonth){ bar.classList.add('hidden'); grid.innerHTML=''; return; }
+  bar.classList.remove('hidden');
+  // ajusta botões disponíveis
+  const segDay=$('#chartGranSeg [data-gran="day"]'), segMonth=$('#chartGranSeg [data-gran="month"]');
+  segDay.classList.toggle('hidden', !canDay); segMonth.classList.toggle('hidden', !canMonth);
+  if(state.chartGran==='day'&&!canDay) state.chartGran='month';
+  if(state.chartGran==='month'&&!canMonth) state.chartGran='day';
+  if(!state.chartGran) state.chartGran=canDay?'day':'month';
+  $$('#chartGranSeg .seg-btn').forEach(b=>b.classList.toggle('active',b.dataset.gran===state.chartGran));
+  const grain=state.chartGran; const series=teamTimeSeries(snap,grain); const meta=metaTmaSec();
+  const labels=series.map(s=>s.label);
+  const unidade = grain==='month'?'mês':'dia';
+  grid.innerHTML=`
+    <div class="chartcard"><h3>TMA da equipe por ${unidade}</h3><div class="cc-wrap"><canvas id="chtTma"></canvas></div></div>
+    <div class="chartcard"><h3>Chamadas atendidas por ${unidade}</h3><div class="cc-wrap"><canvas id="chtAtend"></canvas></div></div>
+    <div class="chartcard"><h3>Chamadas abandonadas por ${unidade}</h3><div class="cc-wrap"><canvas id="chtAband"></canvas></div></div>
+    <div class="chartcard"><h3>Tempo médio de espera por ${unidade}</h3><div class="cc-wrap"><canvas id="chtEsp"></canvas></div></div>`;
+  mk('chtTma',{type:'line',data:{labels,datasets:[
+    {label:'TMA',data:series.map(s=>s.tma),borderColor:C.red(),backgroundColor:'rgba(212,19,31,.08)',fill:true,tension:.3,pointRadius:3},
+    {label:'Meta',data:series.map(()=>meta),borderColor:C.gold(),borderDash:[6,4],pointRadius:0}]},
+    options:{maintainAspectRatio:false,plugins:{legend:{position:'bottom'},tooltip:{callbacks:{label:c=>c.dataset.label+': '+fmtTMA(c.parsed.y)}}},scales:{y:{...gridCfg(),ticks:{callback:v=>fmtTMA(v)}},x:gridCfg()}}});
+  mk('chtAtend',{type:'bar',data:{labels,datasets:[{label:'Atendidas',data:series.map(s=>s.atendidas),backgroundColor:C.red(),borderRadius:5}]},
+    options:{maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:gridCfg(),x:gridCfg()}}});
+  mk('chtAband',{type:'line',data:{labels,datasets:[{label:'Abandonadas',data:series.map(s=>s.abandonadas),borderColor:C.bad(),backgroundColor:'rgba(200,16,46,.08)',fill:true,tension:.3,pointRadius:3}]},
+    options:{maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:gridCfg(),x:gridCfg()}}});
+  mk('chtEsp',{type:'line',data:{labels,datasets:[{label:'Espera média',data:series.map(s=>s.espera),borderColor:C.gold(),backgroundColor:'rgba(76,155,232,.1)',fill:true,tension:.3,pointRadius:3}]},
+    options:{maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>'Espera: '+fmtTMA(c.parsed.y)}}},scales:{y:{...gridCfg(),ticks:{callback:v=>fmtTMA(v)}},x:gridCfg()}}}); }
+function renderCharts(){ const ts=teamSeries(); const meta=metaTmaSec();
+  renderChartTimeSeries();
+  // TMA evolution
+  mk('chTma',{type:'line',data:{labels:ts.map(t=>t.label),datasets:[
+    {label:'TMA equipe',data:ts.map(t=>t.tma),borderColor:C.red(),backgroundColor:'rgba(212,19,31,.08)',fill:true,tension:.3,pointRadius:4,pointBackgroundColor:C.red()},
+    {label:'Meta',data:ts.map(()=>meta),borderColor:C.gold(),borderDash:[6,4],pointRadius:0,tension:0}]},
+    options:{maintainAspectRatio:false,plugins:{legend:{display:true,position:'bottom'},tooltip:{callbacks:{label:c=>c.dataset.label+': '+fmtTMA(c.parsed.y)}}},scales:{y:{...gridCfg(),ticks:{callback:v=>fmtTMA(v)}},x:gridCfg()}}});
+  // atendidas por operador (current)
+  const rows=visibleRows().slice().sort((a,b)=>b.atendidas-a.atendidas).slice(0,20);
+  mk('chAtend',{type:'bar',data:{labels:rows.map(r=>r.agente),datasets:[{label:'Atendidas',data:rows.map(r=>r.atendidas),backgroundColor:C.red(),borderRadius:5}]},
+    options:{maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:gridCfg(),x:{...gridCfg(),ticks:{maxRotation:60,minRotation:40,autoSkip:false,font:{size:10}}}}}});
+  // abandonadas evolucao
+  mk('chAband',{type:'line',data:{labels:ts.map(t=>t.label),datasets:[{label:'Abandonadas',data:ts.map(t=>t.aband),borderColor:C.bad(),backgroundColor:'rgba(200,16,46,.08)',fill:true,tension:.3,pointRadius:4}]},
+    options:{maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:gridCfg(),x:gridCfg()}}});
+  // TMA por operador x meta
+  const rr=visibleRows().filter(r=>r.tma!=null).sort((a,b)=>b.tma-a.tma).slice(0,20);
+  mk('chTmaOp',{type:'bar',data:{labels:rr.map(r=>r.agente),datasets:[{label:'TMA',data:rr.map(r=>r.tma),backgroundColor:rr.map(r=>{const s=tmaStatus(r.tma);return s==='ok'?C.ok():s==='warn'?C.warn():C.bad();}),borderRadius:5}]},
+    options:{indexAxis:'y',maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>'TMA: '+fmtTMA(c.parsed.x)}}},scales:{x:{...gridCfg(),ticks:{callback:v=>fmtTMA(v)}},y:{...gridCfg(),ticks:{font:{size:10}}}}}});
+}
+
+/* ---------- rankings ---------- */
+function renderRankings(){ const rows=visibleRows(); const g=$('#rankGrid');
+  const byTmaAsc=rows.filter(r=>r.tma!=null).slice().sort((a,b)=>a.tma-b.tma);
+  const byTmaDesc=byTmaAsc.slice().reverse();
+  const byAtendDesc=rows.slice().sort((a,b)=>b.atendidas-a.atendidas);
+  const byAtendAsc=byAtendDesc.slice().reverse();
+  const byAband=rows.filter(r=>r.pctAband!=null).slice().sort((a,b)=>b.pctAband-a.pctAband);
+  const byAbandLow=byAband.slice().reverse();
+  const cards=[
+    {t:'Top 10 menores TMA',g:1,d:byTmaAsc,f:r=>fmtTMA(r.tma)},
+    {t:'Top 10 maiores TMA',g:0,d:byTmaDesc,f:r=>fmtTMA(r.tma)},
+    {t:'Top 10 mais atendimentos',g:1,d:byAtendDesc,f:r=>fmtInt(r.atendidas)},
+    {t:'Top 10 menos atendimentos',g:0,d:byAtendAsc,f:r=>fmtInt(r.atendidas)},
+    {t:'Maior % de abandono',g:0,d:byAband,f:r=>fmtPct(r.pctAband)},
+    {t:'Menor % de abandono',g:1,d:byAbandLow,f:r=>fmtPct(r.pctAband)} ];
+  if(state.snapshots.length>1){ const withT=rows.map(r=>{const s=opSeries(r.agente).filter(x=>x.rec&&x.rec.tma!=null);let ch=null;if(s.length>=2)ch=(s[s.length-1].rec.tma-s[0].rec.tma)/s[0].rec.tma*100;return {agente:r.agente,ch};}).filter(x=>x.ch!=null);
+    const evol=withT.slice().sort((a,b)=>a.ch-b.ch); const queda=withT.slice().sort((a,b)=>b.ch-a.ch);
+    cards.push({t:'Maior evolução (TMA)',g:1,d:evol,f:r=>r.ch.toFixed(0)+'%'});
+    cards.push({t:'Maior queda (TMA)',g:0,d:queda,f:r=>'+'+r.ch.toFixed(0)+'%'}); }
+  g.innerHTML=cards.map(c=>`<div class="rankcard"><h3 class="${c.g?'':'gold'}"><span class="tick"></span>${c.t}</h3><ul class="rank-list">${c.d.slice(0,10).map((r,i)=>`<li data-name="${r.agente}"><span class="rn">${i+1}</span><span class="rname">${r.agente}</span><span class="rval">${c.f(r)}</span></li>`).join('')||'<li style="color:var(--muted);justify-content:center">Sem dados</li>'}</ul></div>`).join('');
+  $$('#rankGrid li[data-name]').forEach(li=>li.addEventListener('click',()=>openOperator(li.dataset.name))); }
+
+/* ---------- compare ---------- */
+function renderCompareSelectors(){ const rows=visibleRows().slice().sort((a,b)=>norm(a.agente).localeCompare(norm(b.agente))); const opts=rows.map(r=>`<option value="${r.agente}">${r.agente}</option>`).join('');
+  $('#cmpA').innerHTML='<option value="">Selecione...</option>'+opts; $('#cmpB').innerHTML='<option value="">Selecione...</option>'+opts; renderCompare(); }
+function cmpInitials(name){ return name.split(/\s+/).slice(0,2).map(w=>w[0]||'').join('').toUpperCase(); }
+function renderCompare(){ const a=$('#cmpA').value,b=$('#cmpB').value; const box=$('#cmpResult'); const rows=currentRows();
+  if(!a||!b){ box.innerHTML='<div class="empty">Selecione dois operadores para comparar lado a lado.</div>'; return; }
+  const ra=rows.find(r=>r.agente===a),rb=rows.find(r=>r.agente===b); if(!ra||!rb){box.innerHTML='';return;}
+  const metrics=[['Atendidas',r=>fmtInt(r.atendidas),(x,y)=>x.atendidas-y.atendidas],['Abandonadas',r=>fmtInt(r.abandonadas),(x,y)=>y.abandonadas-x.abandonadas],['Total',r=>fmtInt(r.total),(x,y)=>x.total-y.total],['TMA',r=>fmtTMA(r.tma),(x,y)=>(y.tma||1e9)-(x.tma||1e9)],['% Abandono',r=>fmtPct(r.pctAband),(x,y)=>(y.pctAband||1e9)-(x.pctAband||1e9)],['Nível serviço',r=>fmtPct(r.ns),(x,y)=>(x.ns||0)-(y.ns||0)]];
+  box.innerHTML=`
+  <div class="cmp-head">
+    <div class="cmp-op"><div class="cmp-avatar">${cmpInitials(a)}</div><div class="cmp-op-name">${a}</div></div>
+    <div class="cmp-vs-badge">VS</div>
+    <div class="cmp-op right"><div class="cmp-op-name">${b}</div><div class="cmp-avatar">${cmpInitials(b)}</div></div>
+  </div>
+  <div class="cmp-metrics">
+  ${metrics.map(m=>{ const diff=m[2](ra,rb); const winA=diff>0, winB=diff<0;
+    return `<div class="cmp-card"><div class="cmp-label">${m[0]}</div><div class="cmp-row">
+      <div class="cmp-val${winA?' win':''}">${m[1](ra)}</div>
+      <div class="cmp-div">vs</div>
+      <div class="cmp-val${winB?' win':''}">${m[1](rb)}</div>
+    </div></div>`; }).join('')}
+  </div>
+  <div class="chartcard"><div class="cc-wrap" style="height:240px"><canvas id="cmpChart"></canvas></div></div>`;
+  const sa=opSeries(a),sb=opSeries(b);
+  mk('cmpChart',{type:'line',data:{labels:orderedSnaps().map(s=>s.label),datasets:[
+    {label:a,data:sa.map(x=>x.rec?x.rec.tma:null),borderColor:C.red(),tension:.3,pointRadius:3},
+    {label:b,data:sb.map(x=>x.rec?x.rec.tma:null),borderColor:C.gold(),tension:.3,pointRadius:3}]},
+    options:{maintainAspectRatio:false,plugins:{legend:{position:'bottom'},title:{display:true,text:'Evolução do TMA'},tooltip:{callbacks:{label:c=>c.dataset.label+': '+fmtTMA(c.parsed.y)}}},scales:{y:{...gridCfg(),ticks:{callback:v=>fmtTMA(v)}},x:gridCfg()}}}); }
+
+/* ---------- operator modal ---------- */
+let currentOp=null;
+function openOperator(name){ const rows=currentRows(); const r=rows.find(x=>x.agente===name); if(!r) return;
+  currentOp=name;
+  $('#opName').textContent=name; $('#opTeam').textContent=r.equipe?('Equipe: '+r.equipe):(r.supervisor?('Supervisor: '+r.supervisor):'');
+  $('#opAvatar').textContent=name.split(/\s+/).slice(0,2).map(w=>w[0]||'').join('').toUpperCase();
+  const meta=metaTmaSec();
+  const kpis=[['Atendidas',fmtInt(r.atendidas)],['Abandonadas',fmtInt(r.abandonadas)],['TMA',fmtTMA(r.tma)]];
+  if(r.espera!=null) kpis.push(['Espera média',fmtTMA(r.espera)]);
+  kpis.push(['% Abandono',fmtPct(r.pctAband)]); if(r.ns!=null) kpis.push(['Nível serviço',fmtPct(r.ns)]);
+  $('#opKpis').innerHTML=kpis.map(k=>`<div class="mkpi"><div class="l">${k[0]}</div><div class="v">${k[1]}</div></div>`).join('');
+  // evolução individual (relatório analítico)
+  renderOpEvolution(name);
+  // team averages
+  const trows=visibleRows();
+  const tmaRows=trows.filter(x=>x.tma!=null); const teamTma=tmaRows.length?tmaRows.reduce((a,x)=>a+x.tma,0)/tmaRows.length:null;
+  const teamAtend=trows.length?trows.reduce((a,x)=>a+x.atendidas,0)/trows.length:0; const teamAband=trows.length?trows.reduce((a,x)=>a+(x.pctAband||0),0)/trows.length:null;
+  const cmp=[['TMA',fmtTMA(r.tma),fmtTMA(teamTma),fmtTMA(meta)],['Atendidas',fmtInt(r.atendidas),fmtInt(teamAtend),fmtInt(state.metas.atend)],['% Abandono',fmtPct(r.pctAband),fmtPct(teamAband),state.metas.aband+'%'],['Nível serviço',fmtPct(r.ns),'—',state.metas.ns+'%']];
+  $('#opCompare').innerHTML=`<div class="compare-line head"><span>Indicador</span><span>Operador</span><span>Equipe</span><span>Meta</span></div>`+cmp.map(c=>`<div class="compare-line"><span style="font-weight:600">${c[0]}</span><span class="num">${c[1]}</span><span class="num">${c[2]}</span><span class="num">${c[3]}</span></div>`).join('');
+  // chart entre relatórios (histórico de snapshots)
+  const s=opSeries(name); const tavg=teamSeries();
+  const multiSnap=orderedSnaps().length>1;
+  $('#opChartTitle').parentElement.style.display=multiSnap?'':'none';
+  $('#opChart').parentElement.style.display=multiSnap?'':'none';
+  if(multiSnap){ mk('opChart',{type:'line',data:{labels:orderedSnaps().map(x=>x.label),datasets:[
+    {label:name,data:s.map(x=>x.rec?x.rec.tma:null),borderColor:C.red(),backgroundColor:'rgba(212,19,31,.08)',fill:true,tension:.3,pointRadius:4},
+    {label:'Média equipe',data:tavg.map(x=>x.tma),borderColor:C.gold(),borderDash:[5,4],pointRadius:0,tension:.3},
+    {label:'Meta',data:orderedSnaps().map(()=>meta),borderColor:C.line(),borderDash:[3,3],pointRadius:0}]},
+    options:{maintainAspectRatio:false,plugins:{legend:{position:'bottom'},title:{display:true,text:'Evolução do TMA entre relatórios'},tooltip:{callbacks:{label:c=>c.dataset.label+': '+fmtTMA(c.parsed.y)}}},scales:{y:{...gridCfg(),ticks:{callback:v=>fmtTMA(v)}},x:gridCfg()}}}); }
+  const obs=$('#opObs'); obs.value=state.obs[name]||''; obs.oninput=()=>{ state.obs[name]=obs.value; save(); };
+  $('#opModal').classList.add('open'); }
+function renderOpEvolution(name){ const head=$('#opEvolHead'), grid=$('#opEvolGrid'); const snap=activeAnalyticSnap();
+  if(!snap){ head.style.display='none'; grid.classList.add('hidden'); grid.innerHTML=''; return; }
+  const g=analyticGranularities(snap); const canDay=g.hasDay, canMonth=g.hasMonth;
+  if(!canDay && !canMonth){ head.style.display='none'; grid.classList.add('hidden'); grid.innerHTML=''; return; }
+  head.style.display='flex'; grid.classList.remove('hidden');
+  const segDay=$('#opGranSeg [data-gran="day"]'), segMonth=$('#opGranSeg [data-gran="month"]');
+  segDay.classList.toggle('hidden',!canDay); segMonth.classList.toggle('hidden',!canMonth);
+  if(state.opGran==='day'&&!canDay) state.opGran='month';
+  if(state.opGran==='month'&&!canMonth) state.opGran='day';
+  if(!state.opGran) state.opGran=canDay?'day':'month';
+  $$('#opGranSeg .seg-btn').forEach(b=>b.classList.toggle('active',b.dataset.gran===state.opGran));
+  const grain=state.opGran; const ser=opTimeSeries(snap,name,grain); const labels=ser.map(x=>x.label); const unidade=grain==='month'?'mês':'dia';
+  grid.innerHTML=`
+    <div class="chartcard"><h3>TMA por ${unidade}</h3><div class="cc-wrap" style="height:200px"><canvas id="opeTma"></canvas></div></div>
+    <div class="chartcard"><h3>Chamadas atendidas por ${unidade}</h3><div class="cc-wrap" style="height:200px"><canvas id="opeAtend"></canvas></div></div>
+    <div class="chartcard"><h3>Tempo médio de espera por ${unidade}</h3><div class="cc-wrap" style="height:200px"><canvas id="opeEsp"></canvas></div></div>
+    <div class="chartcard"><h3>Chamadas abandonadas por ${unidade}</h3><div class="cc-wrap" style="height:200px"><canvas id="opeAband"></canvas></div></div>
+    <div class="chartcard"><h3>Tempo em ligação (TMA total) por ${unidade}</h3><div class="cc-wrap" style="height:200px"><canvas id="opeLig"></canvas></div></div>`;
+  const meta=metaTmaSec();
+  mk('opeTma',{type:'line',data:{labels,datasets:[
+    {label:'TMA',data:ser.map(x=>x.tma),borderColor:C.red(),backgroundColor:'rgba(212,19,31,.08)',fill:true,tension:.3,pointRadius:3},
+    {label:'Meta',data:ser.map(()=>meta),borderColor:C.gold(),borderDash:[5,4],pointRadius:0}]},
+    options:{maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.dataset.label+': '+fmtTMA(c.parsed.y)}}},scales:{y:{...gridCfg(),ticks:{callback:v=>fmtTMA(v)}},x:gridCfg()}}});
+  mk('opeAtend',{type:'bar',data:{labels,datasets:[{label:'Atendidas',data:ser.map(x=>x.atendidas),backgroundColor:C.red(),borderRadius:5}]},
+    options:{maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:gridCfg(),x:gridCfg()}}});
+  mk('opeEsp',{type:'line',data:{labels,datasets:[{label:'Espera',data:ser.map(x=>x.espera),borderColor:C.gold(),backgroundColor:'rgba(76,155,232,.1)',fill:true,tension:.3,pointRadius:3}]},
+    options:{maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>'Espera: '+fmtTMA(c.parsed.y)}}},scales:{y:{...gridCfg(),ticks:{callback:v=>fmtTMA(v)}},x:gridCfg()}}});
+  mk('opeAband',{type:'line',data:{labels,datasets:[{label:'Abandonadas',data:ser.map(x=>x.abandonadas),borderColor:C.bad(),backgroundColor:'rgba(200,16,46,.08)',fill:true,tension:.3,pointRadius:3}]},
+    options:{maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:gridCfg(),x:gridCfg()}}});
+  mk('opeLig',{type:'line',data:{labels,datasets:[{label:'Tempo em ligação',data:ser.map(x=>x.tma),borderColor:C.ok(),backgroundColor:'rgba(18,138,70,.08)',fill:true,tension:.3,pointRadius:3}]},
+    options:{maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>'Tempo em ligação: '+fmtTMA(c.parsed.y)}}},scales:{y:{...gridCfg(),ticks:{callback:v=>fmtTMA(v)}},x:gridCfg()}}}); }
+function closeOp(){ $('#opModal').classList.remove('open'); currentOp=null; }
+
+/* ============================================================
+   IMPORT FLOW
+   ============================================================ */
+let forcedType=null; // 'sintetico' | 'analitico' | null (auto)
+function processQueue(arr,chosenType){ let i=0; const results=[]; const forced=chosenType||forcedType;
+  const step=()=>{ if(i>=arr.length){ commitParsed(results); return; }
+    const f=arr[i++]; const rd=new FileReader(); rd.onload=e=>{ const rows=parseCSV(e.target.result); const hr=findHeaderRow(rows); const header=rows[hr]||[];
+      const type = forced || (isAnalytic(header)?'analitico':'sintetico');
+      const map=type==='sintetico'?autoMap(header):{}; const amap=type==='analitico'?analyticMap(header):null;
+      results.push({name:f.name,rows,hr,header,map,amap,type,dataRows:rows.slice(hr+1)}); step(); }; rd.readAsText(f,'utf-8'); };
+  step(); }
+function buildResultRows(r){ return r.type==='analitico' ? buildRowsAnalytic(r.header,r.dataRows,r.amap) : buildRows(r.header,r.dataRows,r.map); }
+function analyticCallsFor(r){ return r.type==='analitico' ? parseAnalyticCalls(r.header,r.dataRows,r.amap) : null; }
+function commitParsed(results){ if(!results.length) return;
+  const first=results[0];
+  if(first.type==='sintetico' && (first.map.agente<0 || firstImportNeedsReview(first))){ pending={results,active:0}; openMapping(first); return; }
+  let a=0; results.forEach(r=>{ if(r.type==='analitico') a++; addSnapshot(r.name, buildResultRows(r), r.type, analyticCallsFor(r)); });
+  renderAll(); save(); toast(results.length+' relatório(s) importado(s)'+(a?` (${a} analítico)`:'')); }
+function firstImportNeedsReview(r){ // review if key metrics missing
+  return (r.map.tma<0 && r.map.atendidas<0); }
+function openMapping(r){ const grid=$('#mapGrid'); const labels={agente:'Agente / operador',tma:'TMA',ns:'Nível de serviço',abandonadas:'Chamadas abandonadas',atendidas:'Chamadas atendidas',total:'Total de chamadas',logado:'Tempo logado',pausa:'Tempo em pausa',equipe:'Equipe',supervisor:'Supervisor'};
+  grid.innerHTML=Object.keys(labels).map(f=>{ const opts=['<option value="-1">— não usar —</option>'].concat(r.header.map((h,i)=>`<option value="${i}" ${r.map[f]===i?'selected':''}>${h||('coluna '+(i+1))}</option>`)); return `<div><label>${labels[f]}</label><select data-f="${f}">${opts.join('')}</select></div>`; }).join('');
+  $('#mapModal').classList.add('open'); }
+function confirmMapping(){ const map={}; $$('#mapGrid select').forEach(s=>map[s.dataset.f]=parseInt(s.value,10)); map.data=-1;
+  const {results}=pending; results.forEach((r,i)=>{ if(i===0){ addSnapshot(r.name, buildRows(r.header,r.dataRows,map),'sintetico',null); } else { addSnapshot(r.name, buildResultRows(r), r.type, analyticCallsFor(r)); } });
+  pending=null; $('#mapModal').classList.remove('open'); renderAll(); save(); toast('Painel montado'); }
+
+/* ---------- demo data ---------- */
+function demoData(){ const nomes=['Ana Sousa','Bruno Lima','Carla Nunes','Diego Alves','Elaine Rocha','Felipe Costa','Gabriela Dias','Hugo Martins','Isabela Reis','João Pereira','Karina Melo','Lucas Barros','Marina Teixeira','Nathan Gomes','Olívia Freitas','Paulo Ramos'];
+  const meses=['Abril','Maio','Junho','Julho']; state.snapshots=[];
+  meses.forEach((mes,mi)=>{ const rows=nomes.map((n,i)=>{ const base=190+Math.round(Math.sin(i*1.3)*35)- mi*4;
+    const tma=Math.max(120, Math.round(210 + Math.sin(i*2+mi)*70 + (i%4===0?60:0) - mi*8 + (Math.random()*20-10)));
+    const atend=Math.max(40, base + Math.round(Math.random()*40) + mi*3);
+    const aband=Math.max(0, Math.round(atend*(0.02+ (i%5===0?0.05:0.01) + Math.random()*0.02)));
+    const total=atend+aband; const ns=Math.max(70, Math.min(99, 92 - (i%5===0?10:0) + mi + Math.round(Math.random()*4-2)));
+    return {agente:n,atendidas:atend,abandonadas:aband,total,tma,ns,logado:Math.round(atend*tma*1.4),pausa:Math.round(atend*tma*0.2),equipe:i%2?'Equipe A':'Equipe B',supervisor:i%2?'Sup. Rafael':'Sup. Tânia'}; });
+    state.snapshots.push({id:'demo'+mi,label:mes,order:mi,rows}); });
+  state.view=state.snapshots[state.snapshots.length-1].id; renderAll(); save(); toast('Dados de exemplo carregados'); }
+
+/* ============================================================
+   EXPORT
+   ============================================================ */
+function exportRows(){ const rows=filteredSortedRows(); const cols=COLS.filter(c=>c.k==='agente'||state.visible.includes(c.k)).filter(c=>colExists(c.k,currentRows()));
+  const header=cols.map(c=>c.label); const data=rows.map(r=>cols.map(c=>{ const v=r[c.k]; if(c.type==='tma') return fmtTMA(v); if(c.type==='pct'||c.type==='pctAband') return v==null?'':(Math.round(v*10)/10); if(c.type==='trend'){const t=trendOf(r.agente);return t?t.txt:'';} return v==null?'':v; }));
+  return {header,data,rows,cols}; }
+function doExport(kind){ const {header,data}=exportRows(); const label=(state.view==='all'?'todos':(orderedSnaps().find(s=>s.id===state.view)||{}).label||'sac');
+  if(kind==='csv'){ const csv=[header].concat(data).map(r=>r.map(c=>{ c=String(c); return /[";\n]/.test(c)?'"'+c.replace(/"/g,'""')+'"':c; }).join(';')).join('\n'); download(`painel-sac-${label}.csv`,'\uFEFF'+csv,'text/csv;charset=utf-8'); toast('CSV exportado'); }
+  else if(kind==='xlsx'){ if(!window.XLSX){toast('Biblioteca Excel indisponível offline');return;} const ws=XLSX.utils.aoa_to_sheet([header].concat(data)); const wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,ws,'SAC'); XLSX.writeFile(wb,`painel-sac-${label}.xlsx`); toast('Excel exportado'); }
+  else if(kind==='pdf'){ window.print(); }
+  else if(kind==='img'){ if(!window.html2canvas){toast('Biblioteca de imagem indisponível offline');return;} const el=document.querySelector('.wrap'); toast('Gerando imagem...'); html2canvas(el,{backgroundColor:getComputedStyle(document.body).getPropertyValue('--bg'),scale:2}).then(cv=>{ cv.toBlob(b=>{ const u=URL.createObjectURL(b); const a=document.createElement('a'); a.href=u; a.download=`painel-sac-${label}.png`; a.click(); URL.revokeObjectURL(u); toast('Imagem exportada'); }); }); } }
+function exportTableImage(){ if(!window.html2canvas){toast('Biblioteca de imagem indisponível offline');return;}
+  const scroll=$('#tableScroll'); const card=scroll.closest('.tablecard'); const pager=card.querySelector('.pager');
+  const wasExpanded=scroll.classList.contains('expanded'); scroll.classList.add('expanded');
+  const pagerDisplay=pager?pager.style.display:''; if(pager) pager.style.display='none';
+  toast('Gerando imagem da tabela...');
+  html2canvas(card,{backgroundColor:getComputedStyle(document.body).getPropertyValue('--card'),scale:2}).then(cv=>{
+    if(!wasExpanded) scroll.classList.remove('expanded'); if(pager) pager.style.display=pagerDisplay;
+    const MAXW=2400; let out=cv;
+    if(cv.width>MAXW){ const ratio=MAXW/cv.width; const tmp=document.createElement('canvas'); tmp.width=MAXW; tmp.height=Math.round(cv.height*ratio);
+      tmp.getContext('2d').drawImage(cv,0,0,tmp.width,tmp.height); out=tmp; }
+    const label=(state.view==='all'?'todos':(orderedSnaps().find(s=>s.id===state.view)||{}).label||'sac');
+    out.toBlob(b=>{ const u=URL.createObjectURL(b); const a=document.createElement('a'); a.href=u; a.download=`tabela-tma-${label}.png`; a.click(); URL.revokeObjectURL(u); toast('Imagem da tabela exportada'); },'image/png');
+  }).catch(()=>{ if(!wasExpanded) scroll.classList.remove('expanded'); if(pager) pager.style.display=pagerDisplay; toast('Erro ao gerar imagem'); }); }
+
+/* ============================================================
+   THEME
+   ============================================================ */
+function applyTheme(){ document.documentElement.setAttribute('data-theme',state.theme);
+  $('#themeIcon').innerHTML = state.theme==='dark'
+    ? '<path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/>'
+    : '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>';
+  if(state.snapshots.length){ renderCharts(); } }
+
+/* ============================================================
+   EVENTS
+   ============================================================ */
+function wire(){
+  // importação: define o tipo escolhido e abre o seletor de arquivos
+  const pickWith=(type)=>{ forcedType=type; $('#fileInput').click(); };
+  $('#btnImport').onclick=e=>{ e.stopPropagation(); $('#importMenu').classList.toggle('open'); };
+  $('#importMenu').addEventListener('click',e=>{ const t=e.target.closest('button')?.dataset.imp; if(t) pickWith(t); });
+  $('#btnPickSint').onclick=()=>pickWith('sintetico');
+  $('#btnPickAna').onclick=()=>pickWith('analitico');
+  $('#fileInput').onchange=e=>{ processQueue([...e.target.files], forcedType); forcedType=null; e.target.value=''; };
+  $('#btnDemo').onclick=demoData;
+  const dz=$('#dropzone');
+  ['dragenter','dragover'].forEach(ev=>dz.addEventListener(ev,e=>{e.preventDefault();dz.classList.add('drag');}));
+  ['dragleave','drop'].forEach(ev=>dz.addEventListener(ev,e=>{e.preventDefault();dz.classList.remove('drag');}));
+  dz.addEventListener('drop',e=>{ processQueue([...e.dataTransfer.files]); });
+  document.addEventListener('dragover',e=>{ if(state.snapshots.length) e.preventDefault(); });
+  document.addEventListener('drop',e=>{ if(state.snapshots.length&&e.dataTransfer.files.length){ e.preventDefault(); processQueue([...e.dataTransfer.files]); } });
+
+  $('#fileChips').addEventListener('click',e=>{ const id=e.target.dataset.del; if(id){ state.snapshots=state.snapshots.filter(s=>s.id!==id); if(!state.snapshots.length) state.view='last'; renderAll(); save(); } });
+
+  $('#btnExport').onclick=e=>{ e.stopPropagation(); $('#exportMenu').classList.toggle('open'); };
+  document.addEventListener('click',()=>{ $('#exportMenu').classList.remove('open'); $('#importMenu')?.classList.remove('open'); $('#colPop').classList.remove('open'); $('#agentPop').classList.remove('open'); });
+  $('#exportMenu').addEventListener('click',e=>{ const k=e.target.closest('button')?.dataset.exp; if(k) doExport(k); });
+
+  $('#btnTheme').onclick=()=>{ state.theme=state.theme==='dark'?'light':'dark'; applyTheme(); save(); };
+  $('#btnClear').onclick=()=>{ if(confirm('Remover todos os dados importados e observações?')){ state.snapshots=[]; state.obs={}; state.view='last'; renderAll(); save(); toast('Dados limpos'); } };
+
+  // metas
+  const bindMeta=(id,key,transform)=>{ $(id).addEventListener('input',()=>{ state.metas[key]=transform?transform($(id).value):$(id).value; save(); renderKpis(); renderAlerts(); renderTable(); renderCharts(); renderRankings(); }); };
+  bindMeta('#metaTma','tma'); bindMeta('#metaNs','ns',v=>parseFloat(v)||0); bindMeta('#metaAband','aband',v=>parseFloat(v)||0);
+  $('#metaAtend').addEventListener('input',()=>{ state.metas.atend=parseFloat($('#metaAtend').value)||0; state.metas.atendAuto=false; const h=$('#metaAtendHint'); if(h) h.style.display='inline'; save(); renderKpis(); renderAlerts(); renderTable(); renderRankings(); });
+  $('#metaAtendHint').addEventListener('click',()=>{ state.metas.atendAuto=true; syncAutoMetas(); save(); renderKpis(); renderAlerts(); renderTable(); renderRankings(); toast('Meta de atendidas voltou para a média automática'); });
+  $('#snapSelect').addEventListener('change',()=>{ state.view=$('#snapSelect').value; state.anaMonth=''; state.anaDay=''; state.page=1; renderAll(); save(); });
+  $('#anaMonthFilter').addEventListener('change',()=>{ state.anaMonth=$('#anaMonthFilter').value; state.anaDay=''; state.page=1; renderAnaFilters(); renderKpis(); renderAlerts(); renderTeamFilter(); renderAgentFilter(); renderTable(); renderCharts(); renderRankings(); renderCompareSelectors(); renderPeriodsTab(); });
+  $('#anaDayFilter').addEventListener('change',()=>{ state.anaDay=$('#anaDayFilter').value; state.page=1; renderKpis(); renderAlerts(); renderTeamFilter(); renderAgentFilter(); renderTable(); renderCharts(); renderRankings(); renderCompareSelectors(); renderPeriodsTab(); });
+
+  // table controls
+  $('#searchInput').addEventListener('input',()=>{ state.search=$('#searchInput').value; state.page=1; renderTable(); });
+  $('#statusFilter').addEventListener('change',()=>{ state.statusF=$('#statusFilter').value; state.page=1; renderTable(); });
+  $('#teamFilter').addEventListener('change',()=>{ state.teamF=$('#teamFilter').value; state.page=1; renderTable(); });
+  $('#btnCols').addEventListener('click',e=>{ e.stopPropagation(); $('#colPop').classList.toggle('open'); $('#agentPop').classList.remove('open'); });
+  $('#colPop').addEventListener('click',e=>e.stopPropagation());
+  $('#btnAgents').addEventListener('click',e=>{ e.stopPropagation(); $('#agentPop').classList.toggle('open'); $('#colPop').classList.remove('open'); });
+  $('#agentPop').addEventListener('click',e=>e.stopPropagation());
+  $('#btnExpandTable').addEventListener('click',()=>{ const el=$('#tableScroll'); el.classList.toggle('expanded'); $('#btnExpandTable').classList.toggle('flt-on',el.classList.contains('expanded')); });
+  $('#btnTableImg').addEventListener('click',exportTableImage);
+
+  // tabs
+  $$('.tab').forEach(t=>t.addEventListener('click',()=>{ $$('.tab').forEach(x=>x.classList.remove('active')); t.classList.add('active'); $$('.panel').forEach(p=>p.classList.remove('active')); $('#panel-'+t.dataset.tab).classList.add('active'); if(t.dataset.tab==='graficos') renderCharts(); if(t.dataset.tab==='periodos') renderPeriods(); }));
+
+  // segmented control dos gráficos (dia/mês)
+  $('#chartGranSeg').addEventListener('click',e=>{ const b=e.target.closest('.seg-btn'); if(!b) return; state.chartGran=b.dataset.gran; renderChartTimeSeries(); });
+  // segmented control da evolução do operador
+  $('#opGranSeg').addEventListener('click',e=>{ const b=e.target.closest('.seg-btn'); if(!b||!currentOp) return; state.opGran=b.dataset.gran; renderOpEvolution(currentOp); });
+  // preset de comparação de períodos
+  $('#periodPreset').addEventListener('change',renderPeriods);
+
+  // compare
+  $('#cmpA').addEventListener('change',renderCompare); $('#cmpB').addEventListener('change',renderCompare);
+
+  // modal
+  $('#opClose').onclick=closeOp; $('#opModal').addEventListener('click',e=>{ if(e.target.id==='opModal') closeOp(); });
+  $('#mapClose').onclick=$('#mapCancel').onclick=()=>{ pending=null; $('#mapModal').classList.remove('open'); };
+  $('#mapConfirm').onclick=confirmMapping;
+  $('#metaTma').value=state.metas.tma; $('#metaAtend').value=state.metas.atend; $('#metaNs').value=state.metas.ns; $('#metaAband').value=state.metas.aband;
+}
+
+/* ============================================================
+   INIT
+   ============================================================ */
+load(); applyTheme(); wire();
+$('#metaTma').value=state.metas.tma; $('#metaAtend').value=state.metas.atend; $('#metaNs').value=state.metas.ns; $('#metaAband').value=state.metas.aband;
+renderAll();
+</script>
+</body>
+</html>
